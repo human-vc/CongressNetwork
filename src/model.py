@@ -179,11 +179,11 @@ def compute_defection_loss(pred, labels, pos_weight=None):
     return F.binary_cross_entropy(pred, labels.float(), reduction="mean")
 
 
-def sample_coalition_pairs(data, n_pairs=COALITION_PAIRS):
+def sample_coalition_pairs(data, n_pairs=COALITION_PAIRS, epoch=0):
     party = data.party_codes
     adjacency_flat = data.edge_index
     n = data.num_nodes
-    rng = np.random.RandomState(SEED)
+    rng = np.random.RandomState(SEED + epoch)
 
     pairs_i = []
     pairs_j = []
@@ -226,12 +226,18 @@ def sample_coalition_pairs(data, n_pairs=COALITION_PAIRS):
     )
 
 
-def compute_polarization_target(data):
-    party = data.party_codes.numpy()
-    nom1 = data.x[:, 0].numpy()
-    dem_mean = nom1[party == 100].mean() if (party == 100).any() else 0.0
-    rep_mean = nom1[party == 200].mean() if (party == 200).any() else 0.0
-    return torch.tensor([abs(rep_mean - dem_mean)], dtype=torch.float32)
+def load_fiedler_targets():
+    import json
+    path = RESULTS_DIR / "spectral_results.json"
+    if not path.exists():
+        return {}
+    with open(path) as f:
+        spectral = json.load(f)
+    targets = {}
+    for c_str, data in spectral.items():
+        if c_str.isdigit() and isinstance(data, dict) and "fiedler" in data:
+            targets[int(c_str)] = data["fiedler"]
+    return targets
 
 
 def train_model(model, model_name="GAT"):
@@ -251,6 +257,8 @@ def train_model(model, model_name="GAT"):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=SCHEDULER_STEP, gamma=SCHEDULER_GAMMA)
+
+    fiedler_targets = load_fiedler_targets()
 
     congress_order = sorted(train_data.keys())
     best_val_loss = float("inf")
@@ -272,7 +280,7 @@ def train_model(model, model_name="GAT"):
             defection_loss = F.binary_cross_entropy(defection_pred, data.y.float())
             total_loss = total_loss + defection_loss
 
-            pairs_i, pairs_j, coalition_targets = sample_coalition_pairs(data)
+            pairs_i, pairs_j, coalition_targets = sample_coalition_pairs(data, epoch=epoch)
             if pairs_i is not None:
                 pairs_i = pairs_i.to(device)
                 pairs_j = pairs_j.to(device)
@@ -284,7 +292,9 @@ def train_model(model, model_name="GAT"):
         if len(graph_embeddings) > 1:
             temporal_out = model.temporal_forward(graph_embeddings)
             for t_idx, c in enumerate(congress_order):
-                pol_target = compute_polarization_target(train_data[c]).to(device)
+                if c not in fiedler_targets:
+                    continue
+                pol_target = torch.tensor([fiedler_targets[c]], dtype=torch.float32, device=device)
                 pol_pred = model.predict_polarization(temporal_out[t_idx])
                 pol_loss = F.mse_loss(pol_pred, pol_target)
                 total_loss = total_loss + pol_loss * 0.1

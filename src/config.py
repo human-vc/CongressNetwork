@@ -36,6 +36,13 @@ DEM_COLOR = "#2166ac"
 REP_COLOR = "#b2182b"
 CROSS_COLOR = "#d95f02"
 
+MCCARTHY_HOLDOUTS = [
+    "BIGGS", "BISHOP", "BOEBERT", "BRECHEEN", "BUCK",
+    "CLOUD", "CLYDE", "CRANE", "DONALDS", "GAETZ",
+    "GOOD", "GOSAR", "HARRIS", "LUNA", "MILLS",
+    "NORMAN", "OGLES", "PERRY", "ROSENDALE", "ROY",
+]
+
 VOTEVIEW_URLS = {
     "HSall_members.csv": "https://voteview.com/static/data/out/members/HSall_members.csv",
     "HSall_votes.csv": "https://voteview.com/static/data/out/votes/HSall_votes.csv",

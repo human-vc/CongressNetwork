@@ -179,50 +179,46 @@ def compute_defection_loss(pred, labels, pos_weight=None):
     return F.binary_cross_entropy(pred, labels.float(), reduction="mean")
 
 
-def sample_coalition_pairs(data, n_pairs=COALITION_PAIRS, epoch=0):
-    party = data.party_codes
-    adjacency_flat = data.edge_index
-    n = data.num_nodes
+def precompute_coalition_edges(data):
+    party = data.party_codes.cpu().numpy()
+    ei = data.edge_index.cpu().numpy()
+    src, dst = ei[0], ei[1]
+    cross_mask = party[src] != party[dst]
+    cross_edges = np.stack([src[cross_mask], dst[cross_mask]], axis=1)
+    same_mask = ~cross_mask
+    same_edges = np.stack([src[same_mask], dst[same_mask]], axis=1)
+    return cross_edges, same_edges
+
+
+def sample_coalition_pairs(cross_edges, same_edges, n_pairs=COALITION_PAIRS, epoch=0):
     rng = np.random.RandomState(SEED + epoch)
-
-    pairs_i = []
-    pairs_j = []
-    targets = []
-
-    edge_set = set()
-    for k in range(adjacency_flat.shape[1]):
-        i, j = adjacency_flat[0, k].item(), adjacency_flat[1, k].item()
-        edge_set.add((i, j))
-
-    cross_edges = [(i, j) for (i, j) in edge_set if party[i] != party[j]]
-    same_edges = [(i, j) for (i, j) in edge_set if party[i] == party[j]]
 
     n_cross = min(n_pairs // 2, len(cross_edges))
     n_same = min(n_pairs - n_cross, len(same_edges))
 
+    if n_cross + n_same == 0:
+        return None, None, None
+
+    pairs_i, pairs_j, targets = [], [], []
+
     if n_cross > 0:
         idx = rng.choice(len(cross_edges), size=n_cross, replace=False)
-        for k in idx:
-            i, j = cross_edges[k]
-            pairs_i.append(i)
-            pairs_j.append(j)
-            targets.append(1.0)
+        sel = cross_edges[idx]
+        pairs_i.append(sel[:, 0])
+        pairs_j.append(sel[:, 1])
+        targets.append(np.ones(n_cross, dtype=np.float32))
 
     if n_same > 0:
         idx = rng.choice(len(same_edges), size=n_same, replace=False)
-        for k in idx:
-            i, j = same_edges[k]
-            pairs_i.append(i)
-            pairs_j.append(j)
-            targets.append(0.0)
-
-    if len(pairs_i) == 0:
-        return None, None, None
+        sel = same_edges[idx]
+        pairs_i.append(sel[:, 0])
+        pairs_j.append(sel[:, 1])
+        targets.append(np.zeros(n_same, dtype=np.float32))
 
     return (
-        torch.tensor(pairs_i, dtype=torch.long),
-        torch.tensor(pairs_j, dtype=torch.long),
-        torch.tensor(targets, dtype=torch.float32),
+        torch.tensor(np.concatenate(pairs_i), dtype=torch.long),
+        torch.tensor(np.concatenate(pairs_j), dtype=torch.long),
+        torch.tensor(np.concatenate(targets), dtype=torch.float32),
     )
 
 
@@ -260,6 +256,10 @@ def train_model(model, model_name="GAT"):
 
     fiedler_targets = load_fiedler_targets()
 
+    coalition_edges = {}
+    for c, d in train_data.items():
+        coalition_edges[c] = precompute_coalition_edges(d)
+
     congress_order = sorted(train_data.keys())
     best_val_loss = float("inf")
     best_state = None
@@ -280,7 +280,8 @@ def train_model(model, model_name="GAT"):
             defection_loss = F.binary_cross_entropy(defection_pred, data.y.float())
             total_loss = total_loss + defection_loss
 
-            pairs_i, pairs_j, coalition_targets = sample_coalition_pairs(data, epoch=epoch)
+            cross_e, same_e = coalition_edges[c]
+            pairs_i, pairs_j, coalition_targets = sample_coalition_pairs(cross_e, same_e, epoch=epoch)
             if pairs_i is not None:
                 pairs_i = pairs_i.to(device)
                 pairs_j = pairs_j.to(device)
@@ -294,7 +295,7 @@ def train_model(model, model_name="GAT"):
             for t_idx, c in enumerate(congress_order):
                 if c not in fiedler_targets:
                     continue
-                pol_target = torch.tensor([fiedler_targets[c]], dtype=torch.float32, device=device)
+                pol_target = torch.tensor(fiedler_targets[c], dtype=torch.float32, device=device)
                 pol_pred = model.predict_polarization(temporal_out[t_idx])
                 pol_loss = F.mse_loss(pol_pred, pol_target)
                 total_loss = total_loss + pol_loss * 0.1

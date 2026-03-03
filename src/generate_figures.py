@@ -5,26 +5,56 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import (
     PROCESSED_DIR, RESULTS_DIR, FIGURES_DIR, CONGRESSES,
-    TEST_CONGRESSES, ANALYSIS_CONGRESS,
-    DEM_COLOR, REP_COLOR, CROSS_COLOR,
+    DEM_COLOR, REP_COLOR,
 )
 
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib.lines import Line2D
+
+OI_BLUE = "#0072B2"
+OI_VERMILLION = "#D55E00"
+OI_ORANGE = "#E69F00"
+OI_SKY = "#56B4E9"
+OI_GREEN = "#009E73"
+OI_PURPLE = "#CC79A7"
+NEUTRAL = "#999999"
+DARK_TEXT = "#000000"
+LIGHT_TEXT = "#000000"
 
 plt.rcParams.update({
     "font.family": "serif",
     "mathtext.fontset": "cm",
-    "font.size": 11,
-    "axes.labelsize": 12,
-    "axes.titlesize": 12,
-    "axes.linewidth": 0.7,
-    "xtick.major.width": 0.6,
-    "ytick.major.width": 0.6,
-    "savefig.dpi": 300,
+    "font.size": 9,
+    "axes.labelsize": 10,
+    "axes.titlesize": 10,
+    "axes.linewidth": 0.6,
+    "xtick.major.width": 0.5,
+    "ytick.major.width": 0.5,
+    "xtick.minor.width": 0.3,
+    "ytick.minor.width": 0.3,
+    "xtick.major.size": 3,
+    "ytick.major.size": 3,
+    "xtick.minor.size": 1.5,
+    "ytick.minor.size": 1.5,
+    "xtick.direction": "in",
+    "ytick.direction": "in",
+    "xtick.top": False,
+    "ytick.right": False,
+    "xtick.labelsize": 8,
+    "ytick.labelsize": 8,
+    "legend.fontsize": 8,
+    "legend.frameon": False,
+    "savefig.dpi": 600,
     "savefig.bbox": "tight",
+    "savefig.pad_inches": 0.05,
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42,
+    "lines.linewidth": 1.2,
+    "lines.markersize": 4,
 })
 
 
@@ -33,16 +63,142 @@ def remove_spines(ax):
     ax.spines["right"].set_visible(False)
 
 
+def panel_label(ax, label, x=-0.12, y=1.06):
+    ax.text(x, y, label, transform=ax.transAxes,
+            fontsize=12, fontweight="bold", va="top", ha="left")
+
+
 def load_json(name):
     with open(RESULTS_DIR / name) as f:
         return json.load(f)
 
 
-def fig_network_comparison():
-    early, late = 104, 117
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4.5))
+def sig_stars(p):
+    if p < 0.001:
+        return "***"
+    if p < 0.01:
+        return "**"
+    if p < 0.05:
+        return "*"
+    return ""
 
-    for ax, congress_num, title in zip(axes, [early, late], [f"{early}th Congress", f"{late}th Congress"]):
+
+def fig_fiedler_party_distance():
+    spectral = load_json("spectral_results.json")
+    nom_data = spectral.get("nominate_distance", {})
+
+    congresses, house_fiedler, nom_dist = [], [], []
+    for c in CONGRESSES:
+        cs = str(c)
+        if cs not in spectral or "fiedler" not in spectral[cs]:
+            continue
+        congresses.append(c)
+        house_fiedler.append(spectral[cs]["fiedler"])
+        nom_dist.append(nom_data.get(cs, None))
+
+    fig, ax1 = plt.subplots(figsize=(6.5, 3.2))
+
+    ax1.plot(congresses, house_fiedler, "o-", color=OI_BLUE, markersize=4,
+             linewidth=1.4, label=r"Fiedler value ($\lambda_2$)", zorder=3)
+    ax1.set_xlabel("Congress")
+    ax1.set_ylabel(r"Fiedler value ($\lambda_2$)", color=OI_BLUE)
+    ax1.tick_params(axis="y", labelcolor=OI_BLUE, colors=OI_BLUE)
+    ax1.spines["left"].set_color(OI_BLUE)
+    remove_spines(ax1)
+    ax1.set_xlim(congresses[0] - 0.5, congresses[-1] + 0.5)
+
+    ax2 = ax1.twinx()
+    nom_c = [c for c, v in zip(congresses, nom_dist) if v is not None]
+    nom_v = [v for v in nom_dist if v is not None]
+    if nom_c:
+        ax2.plot(nom_c, nom_v, "^--", color=OI_VERMILLION, markersize=3.5,
+                 linewidth=1.0, alpha=0.85, label="NOMINATE distance")
+    ax2.set_ylabel("Median party NOMINATE distance", color=OI_VERMILLION)
+    ax2.tick_params(axis="y", labelcolor=OI_VERMILLION, colors=OI_VERMILLION)
+    ax2.spines["top"].set_visible(False)
+    ax2.spines["right"].set_color(OI_VERMILLION)
+
+    events = {
+        104: "Contract w/ America",
+        107: "Post-9/11",
+        111: "Obama supermajority",
+        112: "Tea Party wave",
+    }
+    ymin, ymax = ax1.get_ylim()
+    for c_evt, label in events.items():
+        if c_evt in congresses:
+            ax1.axvline(c_evt, color="#bbbbbb", linewidth=0.4, linestyle=":", zorder=1)
+            idx = congresses.index(c_evt)
+            fval = house_fiedler[idx]
+            ax1.annotate(
+                label, xy=(c_evt, fval), xytext=(c_evt + 0.8, fval + (ymax - ymin) * 0.12),
+                fontsize=6.5, color=LIGHT_TEXT,
+                arrowprops=dict(arrowstyle="-", color="#bbbbbb", linewidth=0.4),
+                va="bottom", ha="left",
+            )
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left", fontsize=7.5)
+
+    fig.tight_layout()
+    fig.savefig(FIGURES_DIR / "fiedler_party_distance.pdf")
+    plt.close()
+    print("  fiedler_party_distance.pdf")
+
+
+def fig_sri_bars():
+    spectral = load_json("spectral_results.json")
+
+    congresses_sri, sri_vals = [], []
+    for c in CONGRESSES:
+        cs = str(c)
+        if cs in spectral and isinstance(spectral[cs], dict) and "sri" in spectral[cs]:
+            val = spectral[cs]["sri"]
+            if val > 0:
+                congresses_sri.append(c)
+                sri_vals.append(val)
+
+    if not congresses_sri:
+        print("  sri_bars.pdf: no data")
+        return
+
+    fig, ax = plt.subplots(figsize=(6.5, 2.8))
+    x = np.arange(len(congresses_sri))
+
+    highlight_set = {104, 107, 111, 112}
+    colors = [OI_VERMILLION if c in highlight_set else OI_SKY for c in congresses_sri]
+
+    bars = ax.bar(x, sri_vals, width=0.7, color=colors, alpha=0.85,
+                  edgecolor="white", linewidth=0.3)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(c) for c in congresses_sri], fontsize=7, rotation=45, ha="right")
+    ax.set_xlabel("Congress (transition from previous)")
+    ax.set_ylabel("Structural Realignment Index")
+
+    highlight = {104: "Contract w/\nAmerica", 107: "Post-9/11", 111: "Obama", 112: "Tea Party"}
+    for c, label in highlight.items():
+        if c in congresses_sri:
+            idx = congresses_sri.index(c)
+            ax.annotate(label, xy=(idx, sri_vals[idx]), xytext=(idx, sri_vals[idx] + 0.003),
+                        ha="center", va="bottom", fontsize=6, color=DARK_TEXT)
+
+    remove_spines(ax)
+    ax.set_ylim(0, max(sri_vals) * 1.15)
+    fig.tight_layout()
+    fig.savefig(FIGURES_DIR / "sri_bars.pdf")
+    plt.close()
+    print("  sri_bars.pdf")
+
+
+def fig_network_comparison():
+    early, late = 103, 114
+    fig, axes = plt.subplots(1, 2, figsize=(7, 3.5))
+
+    ordinals = {103: "103rd", 114: "114th"}
+
+    for panel_idx, (ax, congress_num) in enumerate(zip(axes, [early, late])):
         path = PROCESSED_DIR / f"congress_{congress_num}.npz"
         if not path.exists():
             continue
@@ -50,357 +206,250 @@ def fig_network_comparison():
         adj = data["adjacency"]
         nom1 = data["nominate_dim1"]
         party = data["party_codes"]
+        nom2 = data["features"][:, 1]
 
         rng = np.random.RandomState(42)
-        nom2 = data["features"][:, 1]
-        jitter_x = rng.normal(0, 0.02, len(nom1))
-        jitter_y = rng.normal(0, 0.02, len(nom2))
+        jx = rng.normal(0, 0.015, len(nom1))
+        jy = rng.normal(0, 0.015, len(nom2))
+        px = nom1 + jx
+        py = nom2 + jy
 
         rows, cols = np.nonzero(adj)
-        for k in range(0, len(rows), 3):
+        mask = rows < cols
+
+        same_segs, cross_segs = [], []
+        for k in np.where(mask)[0][::4]:
             i, j = rows[k], cols[k]
-            if i < j:
-                cross = party[i] != party[j]
-                ax.plot(
-                    [nom1[i] + jitter_x[i], nom1[j] + jitter_x[j]],
-                    [nom2[i] + jitter_y[i], nom2[j] + jitter_y[j]],
-                    color=CROSS_COLOR if cross else "#cccccc",
-                    alpha=0.15 if cross else 0.05,
-                    linewidth=0.3,
-                    zorder=1,
-                )
+            seg = [[px[i], py[i]], [px[j], py[j]]]
+            if party[i] != party[j]:
+                cross_segs.append(seg)
+            else:
+                same_segs.append(seg)
+
+        if same_segs:
+            lc_same = LineCollection(same_segs, colors="#d0d0d0", linewidths=0.15,
+                                     alpha=0.25, zorder=1, rasterized=True)
+            ax.add_collection(lc_same)
+        if cross_segs:
+            lc_cross = LineCollection(cross_segs, colors=OI_ORANGE, linewidths=0.2,
+                                      alpha=0.18, zorder=2, rasterized=True)
+            ax.add_collection(lc_cross)
 
         dem_mask = party == 100
         rep_mask = party == 200
-        ax.scatter(nom1[dem_mask] + jitter_x[dem_mask], nom2[dem_mask] + jitter_y[dem_mask],
-                   c=DEM_COLOR, s=12, alpha=0.7, zorder=2, edgecolors="none")
-        ax.scatter(nom1[rep_mask] + jitter_x[rep_mask], nom2[rep_mask] + jitter_y[rep_mask],
-                   c=REP_COLOR, s=12, alpha=0.7, zorder=2, edgecolors="none")
+        ax.scatter(px[dem_mask], py[dem_mask], c=DEM_COLOR, s=8, alpha=0.8,
+                   zorder=3, edgecolors="none", rasterized=True)
+        ax.scatter(px[rep_mask], py[rep_mask], c=REP_COLOR, s=8, alpha=0.8,
+                   zorder=3, edgecolors="none", rasterized=True)
 
-        ax.set_xlabel("NOMINATE Dim. 1")
-        ax.set_ylabel("NOMINATE Dim. 2")
-        ax.set_title(title, fontweight="normal")
+        n_edges = int(mask.sum())
+        n_cross = int(np.sum(party[rows[mask]] != party[cols[mask]]))
+        cross_pct = 100 * n_cross / n_edges if n_edges > 0 else 0
+
+        title = ordinals.get(congress_num, f"{congress_num}th") + " Congress"
+        stats_str = f"{n_edges:,} edges, {n_cross:,} cross-party ({cross_pct:.0f}%)"
+        ax.set_title(f"{title}\n{stats_str}", fontweight="normal", fontsize=9, pad=6,
+                     linespacing=1.6)
+        ax.title.set_multialignment("center")
+
+        ax.set_xlabel("DW-NOMINATE dim. 1")
+        if panel_idx == 0:
+            ax.set_ylabel("DW-NOMINATE dim. 2")
+        else:
+            ax.set_ylabel("")
         remove_spines(ax)
+        ax.autoscale_view()
 
-    plt.tight_layout(w_pad=2.0)
+        panel_label(ax, chr(65 + panel_idx), x=-0.14, y=1.14)
+
+    legend_elements = [
+        Line2D([0], [0], marker="o", color="none", markerfacecolor=DEM_COLOR,
+               markersize=4, label="Democrat"),
+        Line2D([0], [0], marker="o", color="none", markerfacecolor=REP_COLOR,
+               markersize=4, label="Republican"),
+        Line2D([0], [0], color=OI_ORANGE, linewidth=1, alpha=0.5, label="Cross-party edge"),
+    ]
+    fig.legend(handles=legend_elements, loc="upper right", fontsize=5.5,
+               handletextpad=0.3, borderpad=0.2, handlelength=1.2,
+               labelspacing=0.2, bbox_to_anchor=(0.98, 0.95))
+
+    fig.tight_layout(w_pad=1.5, rect=[0, 0, 1, 0.95])
     fig.savefig(FIGURES_DIR / "network_comparison.pdf")
     plt.close()
     print("  network_comparison.pdf")
 
 
-def fig_fiedler_trajectory():
-    spectral = load_json("spectral_results.json")
-
-    congresses = []
-    house_fiedler = []
-    senate_fiedler_vals = []
-    nom_dist = []
-
-    senate_data = spectral.get("senate_fiedler", {})
-    nom_data = spectral.get("nominate_distance", {})
-
-    for c in CONGRESSES:
-        cs = str(c)
-        if cs not in spectral or "fiedler" not in spectral[cs]:
-            continue
-        congresses.append(c)
-        house_fiedler.append(spectral[cs]["fiedler"])
-        senate_fiedler_vals.append(senate_data.get(cs, None))
-        nom_dist.append(nom_data.get(cs, None))
-
-    fig, ax1 = plt.subplots(figsize=(8, 4))
-
-    ax1.plot(congresses, house_fiedler, "o-", color="#1b7837", markersize=4, linewidth=1.5, label="House Fiedler")
-    senate_c = [c for c, v in zip(congresses, senate_fiedler_vals) if v is not None]
-    senate_v = [v for v in senate_fiedler_vals if v is not None]
-    if senate_c:
-        ax1.plot(senate_c, senate_v, "s--", color="#1b7837", markersize=3, linewidth=1.0, alpha=0.6, label="Senate Fiedler")
-
-    ax1.set_xlabel("Congress")
-    ax1.set_ylabel("Fiedler Value ($\\lambda_2$)", color="#1b7837")
-    ax1.tick_params(axis="y", labelcolor="#1b7837")
-    remove_spines(ax1)
-
-    ax2 = ax1.twinx()
-    nom_c = [c for c, v in zip(congresses, nom_dist) if v is not None]
-    nom_v = [v for v in nom_dist if v is not None]
-    if nom_c:
-        ax2.plot(nom_c, nom_v, "^-", color="#762a83", markersize=3, linewidth=1.2, alpha=0.8, label="NOMINATE Distance")
-    ax2.set_ylabel("Median Party NOMINATE Distance", color="#762a83")
-    ax2.tick_params(axis="y", labelcolor="#762a83")
-    ax2.spines["top"].set_visible(False)
-
-    events = {104: "Contract w/ America", 110: "Dem Majority", 115: "Trump Era"}
-    for c_evt, label in events.items():
-        if c_evt in congresses:
-            ax1.axvline(c_evt, color="#999999", linewidth=0.5, linestyle=":", alpha=0.7)
-            ax1.text(c_evt + 0.3, ax1.get_ylim()[1] * 0.95, label,
-                     fontsize=7, color="#666666", rotation=90, va="top")
-
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc="lower left", fontsize=8, frameon=False)
-
-    plt.tight_layout()
-    fig.savefig(FIGURES_DIR / "fiedler_trajectory.pdf")
-    plt.close()
-    print("  fiedler_trajectory.pdf")
-
-
-def fig_attention():
-    eval_results = load_json("evaluation_results.json")
-    attn = eval_results.get("attention", {})
-
-    fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
-
-    congresses_with_attn = sorted([int(c) for c in attn.keys()])
-    same_means = [attn[str(c)]["same_party_mean"] for c in congresses_with_attn]
-    cross_means = [attn[str(c)]["cross_party_mean"] for c in congresses_with_attn]
-
-    x = np.arange(len(congresses_with_attn))
-    w = 0.35
-    axes[0].bar(x - w/2, same_means, w, color=DEM_COLOR, alpha=0.8, label="Same-party")
-    axes[0].bar(x + w/2, cross_means, w, color=CROSS_COLOR, alpha=0.8, label="Cross-party")
-    axes[0].set_xticks(x)
-    axes[0].set_xticklabels([str(c) for c in congresses_with_attn], fontsize=8)
-    axes[0].set_xlabel("Congress")
-    axes[0].set_ylabel("Mean Attention Weight")
-    axes[0].set_title("GAT Attention by Party Alignment", fontweight="normal")
-    axes[0].legend(fontsize=8, frameon=False)
-    remove_spines(axes[0])
-
-    analysis_c = str(ANALYSIS_CONGRESS)
-    if analysis_c in attn:
-        path = PROCESSED_DIR / f"congress_{ANALYSIS_CONGRESS}.npz"
-        if path.exists():
-            data = np.load(path, allow_pickle=True)
-            nom1 = data["nominate_dim1"]
-            sorted_idx = np.argsort(nom1)
-            party = data["party_codes"]
-
-            n = len(nom1)
-            heatmap = np.zeros((n, n))
-            adj = data["adjacency"]
-            agreement = data["agreement"]
-            heatmap = agreement[np.ix_(sorted_idx, sorted_idx)]
-
-            im = axes[1].imshow(heatmap, cmap="RdBu_r", vmin=0.3, vmax=0.9, aspect="auto")
-            axes[1].set_xlabel("Member (sorted by ideology)")
-            axes[1].set_ylabel("Member (sorted by ideology)")
-            axes[1].set_title(f"Agreement Matrix, {ANALYSIS_CONGRESS}th", fontweight="normal")
-            plt.colorbar(im, ax=axes[1], shrink=0.8, label="Agreement")
-
-    plt.tight_layout(w_pad=2.5)
-    fig.savefig(FIGURES_DIR / "attention_analysis.pdf")
-    plt.close()
-    print("  attention_analysis.pdf")
-
-
-def fig_roc_curves():
-    eval_results = load_json("evaluation_results.json")
-    baseline_path = RESULTS_DIR / "baseline_results.json"
-    has_baselines = baseline_path.exists()
-    if has_baselines:
-        baselines = load_json("baseline_results.json")
-
-    n_test = len(TEST_CONGRESSES)
-    fig, axes = plt.subplots(1, n_test, figsize=(4 * n_test, 4))
-    if n_test == 1:
-        axes = [axes]
-
-    colors = {"GAT": "#e66101", "GCN": "#5e3c99", "RF": "#1b9e77", "LR": "#d95f02"}
-
-    for idx, c in enumerate(TEST_CONGRESSES):
-        ax = axes[idx]
-        cs = str(c)
-
-        for model_key, label, color in [("gat", "GAT", colors["GAT"]), ("gcn", "GCN", colors["GCN"])]:
-            if cs in eval_results.get(model_key, {}):
-                fpr = eval_results[model_key][cs]["roc_fpr"]
-                tpr = eval_results[model_key][cs]["roc_tpr"]
-                auc = eval_results[model_key][cs]["auc"]
-                ax.plot(fpr, tpr, color=color, linewidth=1.3, label=f"{label} (AUC={auc:.2f})")
-
-        if has_baselines:
-            for model_key, label, color in [("rf", "RF", colors["RF"]), ("lr", "LR", colors["LR"])]:
-                if cs in baselines.get(model_key, {}):
-                    probs = np.array(baselines[model_key][cs]["probabilities"])
-                    path_npz = PROCESSED_DIR / f"congress_{c}.npz"
-                    if path_npz.exists():
-                        y_true = np.load(path_npz, allow_pickle=True)["labels"]
-                        from sklearn.metrics import roc_curve as sk_roc
-                        fpr, tpr, _ = sk_roc(y_true, probs)
-                        auc = baselines[model_key][cs]["auc"]
-                        ax.plot(fpr, tpr, color=color, linewidth=1.0, linestyle="--", label=f"{label} (AUC={auc:.2f})")
-
-        ax.plot([0, 1], [0, 1], "k:", linewidth=0.5, alpha=0.5)
-        ax.set_xlabel("False Positive Rate")
-        if idx == 0:
-            ax.set_ylabel("True Positive Rate")
-        ax.set_title(f"{c}th Congress", fontweight="normal")
-        ax.legend(fontsize=7, frameon=False, loc="lower right")
-        remove_spines(ax)
-
-    plt.tight_layout(w_pad=1.5)
-    fig.savefig(FIGURES_DIR / "roc_curves.pdf")
-    plt.close()
-    print("  roc_curves.pdf")
-
-
-def fig_bli_scatter():
+def fig_bli_over_time():
     bli_data = load_json("bli_results.json")
 
-    target_congresses = [110, 114, ANALYSIS_CONGRESS]
-    available = [c for c in target_congresses if str(c) in bli_data]
-    if not available:
-        print("  bli_scatter.pdf: no data")
-        return
-
-    n = len(available)
-    fig, axes = plt.subplots(1, n, figsize=(4 * n, 4))
-    if n == 1:
-        axes = [axes]
-
-    for idx, c in enumerate(available):
-        ax = axes[idx]
-        cs = str(c)
-        path = PROCESSED_DIR / f"congress_{c}.npz"
-        if not path.exists():
-            continue
-        data = np.load(path, allow_pickle=True)
-        nom1 = data["nominate_dim1"]
-        party = data["party_codes"]
-        member_names = data["member_names"]
-        bli = np.array(bli_data[cs]["bli_values"])
-
-        dem_mask = party == 100
-        rep_mask = party == 200
-        ax.scatter(nom1[dem_mask], bli[dem_mask], c=DEM_COLOR, s=15, alpha=0.6, edgecolors="none", label="Democrat")
-        ax.scatter(nom1[rep_mask], bli[rep_mask], c=REP_COLOR, s=15, alpha=0.6, edgecolors="none", label="Republican")
-
-        top_k = np.argsort(-np.abs(bli))[:3]
-        for k in top_k:
-            name = str(member_names[k]).split(",")[0]
-            ax.annotate(name, (nom1[k], bli[k]), fontsize=6, alpha=0.8,
-                       xytext=(5, 5), textcoords="offset points")
-
-        ax.set_xlabel("NOMINATE Dim. 1")
-        if idx == 0:
-            ax.set_ylabel("Bridging Legislator Index")
-        ax.set_title(f"{c}th Congress", fontweight="normal")
-        ax.legend(fontsize=7, frameon=False)
-        ax.axhline(0, color="#999999", linewidth=0.5, linestyle=":")
-        remove_spines(ax)
-
-    plt.tight_layout(w_pad=1.5)
-    fig.savefig(FIGURES_DIR / "bli_scatter.pdf")
-    plt.close()
-    print("  bli_scatter.pdf")
-
-
-def fig_counterfactual():
-    spectral = load_json("spectral_results.json")
-
-    congresses_cf = []
-    delta_bli = []
-    delta_ideo = []
-    delta_rand = []
-
+    congresses_bli, mean_abs_bli, max_bli, min_bli = [], [], [], []
     for c in CONGRESSES:
         cs = str(c)
-        if cs in spectral and "counterfactual" in spectral[cs]:
-            cf = spectral[cs]["counterfactual"]
-            congresses_cf.append(c)
-            delta_bli.append(cf["delta_bli"])
-            delta_ideo.append(cf["delta_ideology"])
-            delta_rand.append(cf["delta_random"])
+        if cs not in bli_data:
+            continue
+        vals = np.array(bli_data[cs]["bli_values"])
+        congresses_bli.append(c)
+        mean_abs_bli.append(np.mean(np.abs(vals)))
+        max_bli.append(np.max(vals))
+        min_bli.append(np.min(vals))
 
-    if not congresses_cf:
-        print("  counterfactual_bars.pdf: no data")
-        return
+    fig, ax = plt.subplots(figsize=(6.5, 3.2))
 
-    fig, ax = plt.subplots(figsize=(8, 4))
-    x = np.arange(len(congresses_cf))
-    w = 0.25
+    ax.fill_between(congresses_bli, min_bli, max_bli, alpha=0.10, color=OI_SKY,
+                    linewidth=0, zorder=1)
+    ax.plot(congresses_bli, mean_abs_bli, "o-", color=OI_BLUE, markersize=4,
+            linewidth=1.4, label=r"Mean $|\mathrm{BLI}|$", zorder=3)
+    ax.plot(congresses_bli, max_bli, "v--", color=OI_VERMILLION, markersize=3,
+            linewidth=0.9, alpha=0.8, label="Max BLI", zorder=2)
 
-    ax.bar(x - w, delta_bli, w, color="#e66101", alpha=0.85, label="Remove Top-BLI")
-    ax.bar(x, delta_ideo, w, color="#5e3c99", alpha=0.85, label="Remove Top-Ideology")
-    ax.bar(x + w, delta_rand, w, color="#999999", alpha=0.7, label="Remove Random")
-
-    ax.set_xticks(x)
-    ax.set_xticklabels([str(c) for c in congresses_cf], fontsize=8, rotation=45)
+    ax.axhline(0, color=NEUTRAL, linewidth=0.4, linestyle=":", zorder=1)
     ax.set_xlabel("Congress")
-    ax.set_ylabel("$\\Delta$ Fiedler Value")
-    ax.set_title("Counterfactual: Fiedler Change After Removing Top-10 Members", fontweight="normal")
-    ax.legend(fontsize=8, frameon=False)
-    ax.axhline(0, color="black", linewidth=0.5)
+    ax.set_ylabel("Bridging Legislator Index")
+    ax.legend(loc="lower right")
+    ax.set_xlim(congresses_bli[0] - 0.5, congresses_bli[-1] + 0.5)
     remove_spines(ax)
 
-    plt.tight_layout()
-    fig.savefig(FIGURES_DIR / "counterfactual_bars.pdf")
+    fig.tight_layout()
+    fig.savefig(FIGURES_DIR / "bli_over_time.pdf")
     plt.close()
-    print("  counterfactual_bars.pdf")
+    print("  bli_over_time.pdf")
 
 
-def fig_model_comparison():
-    eval_results = load_json("evaluation_results.json")
-    baseline_path = RESULTS_DIR / "baseline_results.json"
-    has_baselines = baseline_path.exists()
-    if has_baselines:
-        baselines = load_json("baseline_results.json")
+def fig_bli_regression_coefs():
+    reg = load_json("bli_regression_results.json")
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-    models = ["GAT", "GCN"]
-    model_keys = ["gat", "gcn"]
-    colors = ["#e66101", "#5e3c99", "#1b9e77", "#d95f02"]
+    with_bli = reg["with_bli"]
+    params = with_bli["params"]
+    pvals = with_bli["pvalues"]
+    bse = with_bli["bse"]
 
-    if has_baselines:
-        models += ["RF", "LR"]
-        model_keys += ["rf", "lr"]
+    vars_to_plot = ["bli", "ideology_distance", "seniority", "is_republican"]
+    labels = ["BLI", "Ideology\ndistance", "Seniority", "Republican"]
 
-    metrics = [("auc", "AUC"), ("f1", "F1 Score")]
-    for metric_idx, (metric_key, metric_label) in enumerate(metrics):
-        ax = axes[metric_idx]
-        x = np.arange(len(TEST_CONGRESSES))
-        w = 0.8 / len(models)
+    coefs = [params[v] for v in vars_to_plot]
+    errors = [1.96 * bse[v] for v in vars_to_plot]
+    pvalues = [pvals[v] for v in vars_to_plot]
 
-        for m_idx, (model_name, model_key) in enumerate(zip(models, model_keys)):
-            vals = []
-            for c in TEST_CONGRESSES:
-                cs = str(c)
-                if model_key in ("gat", "gcn"):
-                    source = eval_results.get(model_key, {})
-                else:
-                    source = baselines.get(model_key, {}) if has_baselines else {}
-                vals.append(source.get(cs, {}).get(metric_key, 0))
+    fig, axes = plt.subplots(1, 2, figsize=(7, 3.2), gridspec_kw={"width_ratios": [1, 1.1]})
 
-            offset = (m_idx - len(models)/2 + 0.5) * w
-            ax.bar(x + offset, vals, w * 0.9, color=colors[m_idx], alpha=0.85, label=model_name)
+    ax = axes[0]
+    y = np.arange(len(vars_to_plot))
+    bar_colors = [OI_VERMILLION if p < 0.001 else OI_ORANGE if p < 0.05 else NEUTRAL for p in pvalues]
 
-        ax.set_xticks(x)
-        ax.set_xticklabels([f"{c}th" for c in TEST_CONGRESSES])
-        ax.set_ylabel(metric_label)
-        ax.set_title(f"Test Set {metric_label} by Congress", fontweight="normal")
-        ax.legend(fontsize=8, frameon=False)
-        remove_spines(ax)
+    ax.barh(y, coefs, xerr=errors, color=bar_colors, alpha=0.85,
+            edgecolor="none", height=0.6, capsize=2.5,
+            error_kw={"linewidth": 0.7, "capthick": 0.7})
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels)
+    ax.axvline(0, color="black", linewidth=0.5)
+    ax.set_xlabel("GEE coefficient (log-odds)")
 
-    plt.tight_layout(w_pad=2.0)
-    fig.savefig(FIGURES_DIR / "model_comparison.pdf")
+    for i, (c, p) in enumerate(zip(coefs, pvalues)):
+        stars = sig_stars(p)
+        if stars:
+            offset = errors[i] + max(abs(c) * 0.04, 0.3)
+            ax.text(c + offset if c >= 0 else c - offset, i, stars,
+                    ha="left" if c >= 0 else "right", va="center",
+                    fontsize=9, fontweight="bold", color=DARK_TEXT)
+
+    remove_spines(ax)
+    panel_label(ax, "A")
+
+    ax2 = axes[1]
+    eras = reg["era_splits"]
+    era_names = ["early (100-106)", "middle (107-112)", "late (113-116)"]
+    era_labels = ["100th--106th", "107th--112th", "113th--116th"]
+
+    bli_coefs, bli_sig = [], []
+    for era in era_names:
+        if era in eras:
+            bli_coefs.append(eras[era]["params"]["bli"])
+            bli_sig.append(eras[era]["pvalues"]["bli"])
+        else:
+            bli_coefs.append(0)
+            bli_sig.append(1)
+
+    y2 = np.arange(len(era_labels))
+    bar_colors2 = [OI_VERMILLION if p < 0.01 else OI_ORANGE if p < 0.05 else NEUTRAL for p in bli_sig]
+
+    ax2.barh(y2, bli_coefs, color=bar_colors2, alpha=0.85, edgecolor="none", height=0.6)
+    ax2.set_yticks(y2)
+    ax2.set_yticklabels(era_labels)
+    ax2.axvline(0, color="black", linewidth=0.5)
+    ax2.set_xlabel("BLI coefficient (log-odds)")
+
+    for i, (c, p) in enumerate(zip(bli_coefs, bli_sig)):
+        stars = sig_stars(p)
+        p_str = f"$p$ < 0.001" if p < 0.001 else f"$p$ = {p:.3f}"
+        display = f"{p_str} {stars}" if stars else f"{p_str}"
+        x_pos = max(c + 8, 15)
+        ax2.text(x_pos, i, display, ha="left", va="center", fontsize=6.5, color=LIGHT_TEXT)
+
+    remove_spines(ax2)
+    panel_label(ax2, "B")
+
+    fig.tight_layout(w_pad=2.0)
+    fig.savefig(FIGURES_DIR / "bli_regression_coefs.pdf")
     plt.close()
-    print("  model_comparison.pdf")
+    print("  bli_regression_coefs.pdf")
+
+
+def fig_house_senate_fiedler():
+    spectral = load_json("spectral_results.json")
+    senate_data = spectral.get("senate_fiedler", {})
+
+    congresses, house_vals, senate_vals = [], [], []
+    for c in CONGRESSES:
+        cs = str(c)
+        if cs in spectral and isinstance(spectral[cs], dict) and "fiedler" in spectral[cs]:
+            h = spectral[cs]["fiedler"]
+            s = senate_data.get(cs, None)
+            if s is not None:
+                congresses.append(c)
+                house_vals.append(h)
+                senate_vals.append(s)
+
+    fig, ax = plt.subplots(figsize=(6.5, 3.2))
+
+    ax.plot(congresses, house_vals, "o-", color=OI_BLUE, markersize=4,
+            linewidth=1.4, label="House", zorder=3)
+    ax.plot(congresses, senate_vals, "s--", color=OI_VERMILLION, markersize=3.5,
+            linewidth=1.2, label="Senate", zorder=3)
+
+    ax.fill_between(congresses, house_vals, senate_vals, alpha=0.06,
+                    color="#666666", linewidth=0, zorder=1)
+
+    ax.set_xlabel("Congress")
+    ax.set_ylabel(r"Fiedler value ($\lambda_2$)")
+    ax.legend(loc="upper right")
+    ax.set_xlim(congresses[0] - 0.5, congresses[-1] + 0.5)
+    remove_spines(ax)
+
+    ax.set_ylim(ax.get_ylim()[0], ax.get_ylim()[1] * 1.12)
+    events = {107: ("9/11", 0), 111: ("Obama", -1.0), 112: ("Tea Party", 1.0)}
+    ymin, ymax = ax.get_ylim()
+    for c_evt, (label, x_nudge) in events.items():
+        if c_evt in congresses:
+            ax.axvline(c_evt, color="#cccccc", linewidth=0.4, linestyle=":", zorder=1)
+            ax.text(c_evt + x_nudge, ymax * 0.97, label,
+                    fontsize=6.5, color=LIGHT_TEXT, rotation=0, ha="center", va="top")
+
+    fig.tight_layout()
+    fig.savefig(FIGURES_DIR / "house_senate_fiedler.pdf")
+    plt.close()
+    print("  house_senate_fiedler.pdf")
 
 
 def main():
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     print("Generating figures...")
 
+    fig_fiedler_party_distance()
+    fig_sri_bars()
     fig_network_comparison()
-    fig_fiedler_trajectory()
-    fig_attention()
-    fig_roc_curves()
-    fig_bli_scatter()
-    fig_counterfactual()
-    fig_model_comparison()
+    fig_bli_over_time()
+    fig_bli_regression_coefs()
+    fig_house_senate_fiedler()
 
     print("All figures generated.")
 

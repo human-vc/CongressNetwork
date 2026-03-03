@@ -54,20 +54,18 @@ def compute_bli(adjacency):
 
 
 def compute_sri(fiedler_prev, fiedler_curr, ids_prev, ids_curr):
-    shared = set(ids_prev) & set(ids_curr)
+    shared = sorted(set(ids_prev) & set(ids_curr))
     if len(shared) < 5:
+        return 0.0
+    if fiedler_prev is None or fiedler_curr is None:
         return 0.0
     prev_map = {icpsr: i for i, icpsr in enumerate(ids_prev)}
     curr_map = {icpsr: i for i, icpsr in enumerate(ids_curr)}
-    displacements = []
-    for icpsr in shared:
-        if fiedler_prev is not None and fiedler_curr is not None:
-            v_prev = fiedler_prev[prev_map[icpsr]]
-            v_curr = fiedler_curr[curr_map[icpsr]]
-            displacements.append(abs(v_curr - v_prev))
-    if not displacements:
-        return 0.0
-    return float(np.mean(displacements))
+    v_prev = np.array([fiedler_prev[prev_map[icpsr]] for icpsr in shared])
+    v_curr = np.array([fiedler_curr[curr_map[icpsr]] for icpsr in shared])
+    if np.dot(v_prev, v_curr) < 0:
+        v_curr = -v_curr
+    return float(np.linalg.norm(v_curr - v_prev))
 
 
 def counterfactual_removal(adjacency, bli_values, nominate_dim1, k=10):
@@ -189,18 +187,16 @@ def main():
         print(f"Congress {congress_num}: computing Fiedler...", end=" ", flush=True)
         f_val, f_vec = fiedler_value(adjacency)
 
+        L, keep = normalized_laplacian(adjacency)
+        fiedler_full = np.zeros(len(member_ids))
+        if f_vec is not None and keep is not None:
+            fiedler_full[keep] = f_vec
+
         sri = 0.0
         if prev_fiedler_vec is not None and prev_ids is not None:
-            sri = compute_sri(prev_fiedler_vec, f_vec, prev_ids, member_ids)
+            sri = compute_sri(prev_fiedler_vec, fiedler_full, prev_ids, member_ids)
 
-        L, keep = normalized_laplacian(adjacency)
-        if keep is not None:
-            fiedler_for_sri = np.zeros(len(member_ids))
-            if f_vec is not None:
-                fiedler_for_sri[keep] = f_vec
-            prev_fiedler_vec = fiedler_for_sri
-        else:
-            prev_fiedler_vec = None
+        prev_fiedler_vec = fiedler_full
         prev_ids = member_ids
 
         spectral_results[str(congress_num)] = {

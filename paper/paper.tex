@@ -361,7 +361,7 @@ Cross-party edges disappeared, bridge legislators were eliminated, and the Fiedl
 
 In the first experiment, we simulate the effect on the 118th Congress's co-voting network if a subset of its members cooperated across party lines at rates comparable to the 103rd Congress. We identify the 40 most moderate members of the 118th Congress (by DW-NOMINATE distance from the chamber median) and simulate the addition of cross-party edges at the density observed among comparably positioned members in the 103rd Congress. Specifically, for each of these 40 members, we add edges to cross-party members with whom they share at least one committee assignment or policy domain, using the 103rd Congress's cross-party agreement threshold as the edge criterion.\footnote{``Committee overlap'' requires shared membership on any standing committee as recorded in Voteview's committee assignment data. ``Policy domain'' is defined by the Congressional Bills Project's major topic codes: two members share a policy domain if both sponsored or cosponsored legislation in the same topic category during the Congress in question. The agreement threshold is $\tau = 0.5$ (majority agreement on shared votes), matching the binary adjacency construction used throughout. Varying the committee overlap requirement to two shared committees or dropping the policy domain criterion shifts the effective number of bridge legislators from roughly 25 to 50, as reported in the sensitivity discussion below.}
 
-The 118th Congress's Fiedler value increases from 0.032 to approximately 0.21 under this perturbation. A sixfold improvement, restoring connectivity to roughly the level observed in the mid-1990s. This remains well below the 103rd Congress's actual Fiedler value of 0.230, because the perturbation affects only 40 of 451 members and does not alter the dense within-party structure that has developed over three decades. But the structural difference between the two eras is not a function of the entire chamber's behavior; it is concentrated in the cooperative patterns of a relatively small number of potential bridge members. Fewer than 10\% of House members maintaining 1993-level cross-party cooperation would be enough to recover most of the lost connectivity.
+Under the baseline specification (40 moderates, any shared committee), the 118th Congress's Fiedler value increases from 0.032 to 0.083, a 2.6-fold improvement. Relaxing the committee filter raises this to 0.108 (3.4$\times$); tightening it to two shared committees yields 0.059 (1.9$\times$). Across all 12 specifications in the sensitivity grid (Appendix~\ref{app:counterfactual}), the perturbed Fiedler value exceeds the baseline by at least 40\%. The structural difference between the two eras is concentrated in the cooperative patterns of a small number of potential bridge members.
 
 \subsection{Removing Bridge Legislators from Historical Networks}
 
@@ -540,7 +540,7 @@ $k$ & Overlap & Edges Added & Perturbed $\lambda_2$ & Ratio vs.\ Base \\
 40 & strict &   844 & 0.059 & 1.9$\times$ \\
 \midrule
 50 & none   & 3,651 & 0.130 & 4.1$\times$ \\
-50 & loose  & 1,078 & 0.098 & 3.1$\times$ \\
+50 & loose  & 2,179 & 0.098 & 3.1$\times$ \\
 50 & strict & 1,078 & 0.068 & 2.1$\times$ \\
 \bottomrule
 \end{tabular}

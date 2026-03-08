@@ -125,8 +125,10 @@ def fig_robustness_panels():
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7, 3.2))
 
     # Panel A
-    ax1.fill_between(congresses_n, ci_lo, ci_hi, alpha=0.18, color=NEUTRAL,
+    ax1.fill_between(congresses_n, ci_lo, ci_hi, alpha=0.4, color=NEUTRAL,
                      linewidth=0, zorder=1)
+    ax1.text(congresses_n[-1] + 0.3, np.mean(ci_hi[-3:]), "95% CI",
+             fontsize=5, color="#777777", va="center", ha="left")
     ax1.plot(congresses_n, null_mean, "--", color=NEUTRAL, linewidth=0.9,
              alpha=0.7, zorder=2)
     temp_c = [c for c, v in zip(congresses_n, temp_mean) if v is not None]

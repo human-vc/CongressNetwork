@@ -143,12 +143,12 @@ def fig_robustness_panels():
                     marker="^", s=35, facecolors="none", edgecolors=OI_VERMILLION,
                     linewidths=1.0, zorder=5)
 
-    # Inline labels in top-right area
-    ax1.text(0.97, 0.97, r"Empirical $\lambda_2$", transform=ax1.transAxes,
+    # Inline labels top-right, tight spacing
+    ax1.text(0.99, 0.99, r"Empirical $\lambda_2$", transform=ax1.transAxes,
              fontsize=6, color=OI_BLUE, va="top", ha="right")
-    ax1.text(0.97, 0.89, "Config. model mean", transform=ax1.transAxes,
+    ax1.text(0.99, 0.93, "Config. model mean", transform=ax1.transAxes,
              fontsize=6, color=NEUTRAL, va="top", ha="right")
-    ax1.text(0.97, 0.81, "Linear-decline null", transform=ax1.transAxes,
+    ax1.text(0.99, 0.87, "Linear-decline null", transform=ax1.transAxes,
              fontsize=6, color=OI_ORANGE, va="top", ha="right")
 
     ax1.set_xlabel("Congress")
@@ -165,13 +165,13 @@ def fig_robustness_panels():
     ax2.fill_between(congresses_w, binary_vals, weighted_vals, alpha=0.06,
                      color="#666666", linewidth=0, zorder=1)
 
-    # Inline labels in top-right area
-    ax2.text(0.97, 0.97, r"Binary ($\tau = 0.5$)", transform=ax2.transAxes,
+    # Inline labels top-right, tight spacing
+    ax2.text(0.99, 0.99, r"Binary ($\tau = 0.5$)", transform=ax2.transAxes,
              fontsize=6, color=OI_BLUE, va="top", ha="right")
-    ax2.text(0.97, 0.89, "Weighted (continuous)", transform=ax2.transAxes,
+    ax2.text(0.99, 0.93, "Weighted (continuous)", transform=ax2.transAxes,
              fontsize=6, color=OI_VERMILLION, va="top", ha="right")
     if corr is not None:
-        ax2.text(0.97, 0.81, f"$r = {corr:.3f}$", transform=ax2.transAxes,
+        ax2.text(0.99, 0.87, f"$r = {corr:.3f}$", transform=ax2.transAxes,
                  fontsize=6, color=DARK_TEXT, va="top", ha="right")
 
     ax2.set_xlabel("Congress")

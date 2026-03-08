@@ -143,13 +143,19 @@ def fig_robustness_panels():
                     marker="^", s=35, facecolors="none", edgecolors=OI_VERMILLION,
                     linewidths=1.0, zorder=5)
 
-    # Inline labels top-right, tight spacing
-    ax1.text(0.99, 0.99, r"Empirical $\lambda_2$", transform=ax1.transAxes,
-             fontsize=6, color=OI_BLUE, va="top", ha="right")
-    ax1.text(0.99, 0.93, "Config. model mean", transform=ax1.transAxes,
-             fontsize=6, color=NEUTRAL, va="top", ha="right")
-    ax1.text(0.99, 0.87, "Linear-decline null", transform=ax1.transAxes,
-             fontsize=6, color=OI_ORANGE, va="top", ha="right")
+    # Legend with symbols, center-right
+    from matplotlib.lines import Line2D as _L2D
+    leg_a = [
+        _L2D([0], [0], marker="o", color=OI_BLUE, linewidth=1.2, markersize=3,
+             label=r"Empirical $\lambda_2$"),
+        _L2D([0], [0], linestyle="--", color=NEUTRAL, linewidth=0.9,
+             label="Config. model mean"),
+        _L2D([0], [0], linestyle=":", color=OI_ORANGE, linewidth=1.1,
+             label="Linear-decline null"),
+    ]
+    ax1.legend(handles=leg_a, loc="center right", fontsize=6,
+               handlelength=1.5, handletextpad=0.4, labelspacing=0.2,
+               borderpad=0.3, borderaxespad=0.3)
 
     ax1.set_xlabel("Congress")
     ax1.set_ylabel(r"Fiedler value ($\lambda_2$)")
@@ -165,14 +171,16 @@ def fig_robustness_panels():
     ax2.fill_between(congresses_w, binary_vals, weighted_vals, alpha=0.06,
                      color="#666666", linewidth=0, zorder=1)
 
-    # Inline labels top-right, tight spacing
-    ax2.text(0.99, 0.99, r"Binary ($\tau = 0.5$)", transform=ax2.transAxes,
-             fontsize=6, color=OI_BLUE, va="top", ha="right")
-    ax2.text(0.99, 0.93, "Weighted (continuous)", transform=ax2.transAxes,
-             fontsize=6, color=OI_VERMILLION, va="top", ha="right")
-    if corr is not None:
-        ax2.text(0.99, 0.87, f"$r = {corr:.3f}$", transform=ax2.transAxes,
-                 fontsize=6, color=DARK_TEXT, va="top", ha="right")
+    # Legend with symbols, top-right
+    leg_b = [
+        _L2D([0], [0], marker="o", color=OI_BLUE, linewidth=1.2, markersize=3,
+             label=r"Binary ($\tau = 0.5$)"),
+        _L2D([0], [0], marker="s", linestyle="--", color=OI_VERMILLION,
+             linewidth=1.0, markersize=3, label="Weighted (continuous)"),
+    ]
+    ax2.legend(handles=leg_b, loc="upper right", fontsize=6,
+               handlelength=1.5, handletextpad=0.4, labelspacing=0.2,
+               borderpad=0.3, borderaxespad=0.3)
 
     ax2.set_xlabel("Congress")
     ax2.set_ylabel(r"Fiedler value ($\lambda_2$)")

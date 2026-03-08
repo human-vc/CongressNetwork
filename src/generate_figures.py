@@ -563,6 +563,74 @@ def fig_house_senate_fiedler():
     print("  house_senate_fiedler.pdf")
 
 
+def fig_freshman_cohorts():
+    with open(RESULTS_DIR / "freshman_cohort_results.json") as f:
+        data = json.load(f)
+
+    cwa_xp = np.array(data["contract_with_america_104"]["fresh_xparty"])
+    tea_xp = np.array(data["tea_party_112"]["fresh_xparty"])
+    ks_stat = data["ks_test_xparty"]["statistic"]
+    ks_p = data["ks_test_xparty"]["pvalue"]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.5, 2.8))
+
+    # --- Panel A: Overlaid histograms of cross-party agreement ---
+    bins = np.linspace(0.20, 0.55, 30)
+    ax1.hist(cwa_xp, bins=bins, alpha=0.55, color=OI_BLUE, edgecolor="white",
+             linewidth=0.4, label="104th (Contract)", density=True)
+    ax1.hist(tea_xp, bins=bins, alpha=0.55, color=OI_VERMILLION, edgecolor="white",
+             linewidth=0.4, label="112th (Tea Party)", density=True)
+
+    ax1.axvline(np.median(cwa_xp), color=OI_BLUE, linestyle="--", linewidth=0.9, alpha=0.8)
+    ax1.axvline(np.median(tea_xp), color=OI_VERMILLION, linestyle="--", linewidth=0.9, alpha=0.8)
+
+    ax1.set_xlabel("Mean cross-party agreement rate")
+    ax1.set_ylabel("Density")
+    ax1.text(0.97, 0.95,
+             f"KS = {ks_stat:.2f}\n$p < 10^{{-34}}$",
+             transform=ax1.transAxes, fontsize=7, va="top", ha="right")
+    ax1.legend(fontsize=7, handlelength=1.2, handletextpad=0.4,
+               labelspacing=0.2, loc="upper left")
+    ax1.set_title("A", fontsize=10, fontweight="bold", loc="left", pad=4)
+    ax1.set_xlim(0.20, 0.55)
+
+    # --- Panel B: CDFs ---
+    cwa_sorted = np.sort(cwa_xp)
+    tea_sorted = np.sort(tea_xp)
+    cwa_cdf = np.arange(1, len(cwa_sorted) + 1) / len(cwa_sorted)
+    tea_cdf = np.arange(1, len(tea_sorted) + 1) / len(tea_sorted)
+
+    ax2.step(cwa_sorted, cwa_cdf, where="post", color=OI_BLUE, linewidth=1.1,
+             label="104th (Contract)")
+    ax2.step(tea_sorted, tea_cdf, where="post", color=OI_VERMILLION, linewidth=1.1,
+             label="112th (Tea Party)")
+
+    # Shade the KS gap region
+    # Find the point of maximum divergence
+    all_vals = np.sort(np.concatenate([cwa_xp, tea_xp]))
+    cwa_ecdf = np.searchsorted(cwa_sorted, all_vals, side="right") / len(cwa_sorted)
+    tea_ecdf = np.searchsorted(tea_sorted, all_vals, side="right") / len(tea_sorted)
+    max_idx = np.argmax(np.abs(cwa_ecdf - tea_ecdf))
+    max_x = all_vals[max_idx]
+    ax2.annotate("", xy=(max_x, tea_ecdf[max_idx]), xytext=(max_x, cwa_ecdf[max_idx]),
+                 arrowprops=dict(arrowstyle="<->", color=NEUTRAL, lw=0.8))
+    ax2.text(max_x - 0.025, (cwa_ecdf[max_idx] + tea_ecdf[max_idx]) / 2,
+             f"$D = {ks_stat:.2f}$", fontsize=7, va="center", ha="center",
+             color=NEUTRAL)
+
+    ax2.set_xlabel("Mean cross-party agreement rate")
+    ax2.set_ylabel("Cumulative probability")
+    ax2.legend(fontsize=7, handlelength=1.2, handletextpad=0.4,
+               labelspacing=0.2, loc="lower right")
+    ax2.set_title("B", fontsize=10, fontweight="bold", loc="left", pad=4)
+    ax2.set_xlim(0.20, 0.55)
+
+    fig.tight_layout(w_pad=2.5)
+    fig.savefig(FIGURES_DIR / "freshman_cohorts.pdf")
+    plt.close()
+    print("  freshman_cohorts.pdf")
+
+
 def main():
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     print("Generating figures...")
@@ -574,6 +642,7 @@ def main():
     fig_bli_over_time()
     fig_bli_regression_coefs()
     fig_house_senate_fiedler()
+    fig_freshman_cohorts()
 
     print("All figures generated.")
 

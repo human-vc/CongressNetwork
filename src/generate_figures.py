@@ -158,7 +158,7 @@ def fig_robustness_panels():
     ax1.legend(handles=leg_a, fontsize=6,
                handlelength=1.5, handletextpad=0.4, labelspacing=0.15,
                borderpad=0.1, borderaxespad=0.0,
-               bbox_to_anchor=(1.02, 1.05), loc="upper right")
+               bbox_to_anchor=(1.02, 0.55), loc="right")
 
     ax1.set_xlabel("Congress")
     ax1.set_ylabel(r"Fiedler value ($\lambda_2$)")

@@ -2,16 +2,6 @@
 
 Spectral analysis of U.S. congressional co-voting networks, 100th--118th Congresses (1987--2025). Tracks the collapse of bipartisan cooperation through algebraic connectivity (Fiedler value), introduces a Bridge Legislator Index quantifying individual members' contributions to network cohesion, and demonstrates via GEE regression that bridge position predicts congressional departure beyond ideology, seniority, and party.
 
-## Paper
-
-The LaTeX source and figures are in `paper/`. Key findings:
-
-- The House Fiedler value peaked at 0.805 (107th, post-9/11) and collapsed to 0.032 (118th), a 96% decline
-- The 111th-to-112th transition (Tea Party wave) produced a Fiedler drop of 0.664, the largest single-congress structural shock in the dataset
-- Structural recovery capacity declined across successive shocks: recovery ratios of 1.93 (Contract with America), 0.76 (9/11), and 0.01 (Tea Party)
-- BLI predicts departure with p < 10^-7, with a significant partisan asymmetry (BLI x Republican interaction, p = 0.018)
-- Approximately 35 bridge legislators account for most of the structural difference between the connected 103rd and disconnected 118th Congresses
-
 ## Pipeline
 
 | Stage | Script | Description |

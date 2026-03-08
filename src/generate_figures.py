@@ -153,9 +153,9 @@ def fig_robustness_panels():
         _L2D([0], [0], linestyle=":", color=OI_ORANGE, linewidth=1.1,
              label="Linear-decline null"),
     ]
-    ax1.legend(handles=leg_a, loc="center right", fontsize=6,
+    ax1.legend(handles=leg_a, loc="right", fontsize=6,
                handlelength=1.5, handletextpad=0.4, labelspacing=0.2,
-               borderpad=0.3, borderaxespad=0.3)
+               borderpad=0.2, borderaxespad=0.1)
 
     ax1.set_xlabel("Congress")
     ax1.set_ylabel(r"Fiedler value ($\lambda_2$)")
@@ -180,7 +180,7 @@ def fig_robustness_panels():
     ]
     ax2.legend(handles=leg_b, loc="upper right", fontsize=6,
                handlelength=1.5, handletextpad=0.4, labelspacing=0.2,
-               borderpad=0.3, borderaxespad=0.3)
+               borderpad=0.2, borderaxespad=0.1)
 
     ax2.set_xlabel("Congress")
     ax2.set_ylabel(r"Fiedler value ($\lambda_2$)")

@@ -125,17 +125,15 @@ def fig_robustness_panels():
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7, 3.2))
 
     # Panel A
-    ax1.fill_between(congresses_n, ci_lo, ci_hi, alpha=0.18, color=NEUTRAL,
-                     linewidth=0, zorder=1, label="Config. model 95% CI")
     ax1.plot(congresses_n, null_mean, "--", color=NEUTRAL, linewidth=0.9,
-             alpha=0.7, zorder=2, label="Config. model mean")
+             alpha=0.7, zorder=2)
     temp_c = [c for c, v in zip(congresses_n, temp_mean) if v is not None]
     temp_v = [v for v in temp_mean if v is not None]
     if temp_c:
         ax1.plot(temp_c, temp_v, ":", color=OI_ORANGE, linewidth=1.1,
-                 alpha=0.85, zorder=2, label="Linear-decline null")
+                 alpha=0.85, zorder=2)
     ax1.plot(congresses_n, empirical, "o-", color=OI_BLUE, markersize=3,
-             linewidth=1.2, zorder=4, label=r"Empirical $\lambda_2$")
+             linewidth=1.2, zorder=4)
 
     above = [(c, e) for c, e, hi in zip(congresses_n, empirical, ci_hi) if e > hi]
     if above:
@@ -143,45 +141,44 @@ def fig_robustness_panels():
                     marker="^", s=35, facecolors="none", edgecolors=OI_VERMILLION,
                     linewidths=1.0, zorder=5)
 
-    annotations = {107: "107th", 111: "111th"}
-    for c_ann, label in annotations.items():
-        if c_ann in congresses_n:
-            idx = congresses_n.index(c_ann)
-            e = empirical[idx]
-            hi = ci_hi[idx]
-            if e > hi:
-                ax1.annotate(label, xy=(c_ann, e),
-                             xytext=(c_ann + 1.0, e + 0.04),
-                             fontsize=6.5, color=OI_VERMILLION,
-                             arrowprops=dict(arrowstyle="-", color=OI_VERMILLION,
-                                             linewidth=0.5),
-                             va="bottom", ha="left")
+    # Inline labels in top-right area
+    ax1.text(0.97, 0.97, r"Empirical $\lambda_2$", transform=ax1.transAxes,
+             fontsize=6, color=OI_BLUE, va="top", ha="right")
+    ax1.text(0.97, 0.89, "Config. model mean", transform=ax1.transAxes,
+             fontsize=6, color=NEUTRAL, va="top", ha="right")
+    ax1.text(0.97, 0.81, "Linear-decline null", transform=ax1.transAxes,
+             fontsize=6, color=OI_ORANGE, va="top", ha="right")
 
     ax1.set_xlabel("Congress")
     ax1.set_ylabel(r"Fiedler value ($\lambda_2$)")
     ax1.set_xlim(congresses_n[0] - 0.5, congresses_n[-1] + 0.5)
     remove_spines(ax1)
-    ax1.legend(loc="upper right", fontsize=6)
     panel_label(ax1, "A", x=-0.16, y=1.08)
 
     # Panel B
     ax2.plot(congresses_w, binary_vals, "o-", color=OI_BLUE, markersize=3,
-             linewidth=1.2, label=r"Binary ($\tau = 0.5$)", zorder=3)
+             linewidth=1.2, zorder=3)
     ax2.plot(congresses_w, weighted_vals, "s--", color=OI_VERMILLION, markersize=3,
-             linewidth=1.0, label="Weighted (continuous)", zorder=3)
+             linewidth=1.0, zorder=3)
     ax2.fill_between(congresses_w, binary_vals, weighted_vals, alpha=0.06,
                      color="#666666", linewidth=0, zorder=1)
+
+    # Inline labels in top-right area
+    ax2.text(0.97, 0.97, r"Binary ($\tau = 0.5$)", transform=ax2.transAxes,
+             fontsize=6, color=OI_BLUE, va="top", ha="right")
+    ax2.text(0.97, 0.89, "Weighted (continuous)", transform=ax2.transAxes,
+             fontsize=6, color=OI_VERMILLION, va="top", ha="right")
+    if corr is not None:
+        ax2.text(0.97, 0.81, f"$r = {corr:.3f}$", transform=ax2.transAxes,
+                 fontsize=6, color=DARK_TEXT, va="top", ha="right")
+
     ax2.set_xlabel("Congress")
     ax2.set_ylabel(r"Fiedler value ($\lambda_2$)")
     ax2.set_xlim(congresses_w[0] - 0.5, congresses_w[-1] + 0.5)
     remove_spines(ax2)
-    if corr is not None:
-        ax2.text(0.03, 0.03, f"$r = {corr:.3f}$", transform=ax2.transAxes,
-                 fontsize=7, color=DARK_TEXT, va="bottom", ha="left")
-    ax2.legend(loc="upper right", fontsize=6)
     panel_label(ax2, "B", x=-0.16, y=1.08)
 
-    fig.tight_layout(w_pad=2.0)
+    fig.tight_layout(w_pad=1.5)
     fig.savefig(FIGURES_DIR / "robustness_panels.pdf")
     plt.close()
     print("  robustness_panels.pdf")

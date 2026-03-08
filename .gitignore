@@ -10,11 +10,9 @@ build/
 data/*.csv
 data/processed/
 
-results/*.pt
-
-*.pt
-*.pth
 
 .DS_Store
 .env
 *.log
+
+paper/

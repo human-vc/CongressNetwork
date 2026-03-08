@@ -10,7 +10,7 @@ import pandas as pd
 import statsmodels.api as sm
 from statsmodels.genmod.generalized_estimating_equations import GEE
 from statsmodels.genmod.families import Binomial
-from statsmodels.genmod.cov_struct import Independence
+from statsmodels.genmod.cov_struct import Independence, Exchangeable, Autoregressive
 
 
 def build_panel():
@@ -170,6 +170,119 @@ def main():
     interaction_result = run_interaction_model(panel)
     era_results = run_era_splits(panel)
 
+    print("\n--- GEE Correlation Structure Sensitivity ---")
+    corr_sensitivity = {}
+
+    panel_sorted = panel.sort_values(["icpsr", "congress"]).reset_index(drop=True)
+    formula_vars = ["bli", "ideology_distance", "seniority", "is_republican"]
+
+    congress_vals = sorted(panel_sorted["congress"].unique())
+    congress_to_time = {c: i for i, c in enumerate(congress_vals)}
+    panel_sorted["time"] = panel_sorted["congress"].map(congress_to_time)
+
+    scale_vars = ["bli", "ideology_distance", "seniority"]
+    means = {v: panel_sorted[v].mean() for v in scale_vars}
+    stds = {v: panel_sorted[v].std() for v in scale_vars}
+
+    panel_std = panel_sorted.copy()
+    for v in scale_vars:
+        if stds[v] > 0:
+            panel_std[v] = (panel_std[v] - means[v]) / stds[v]
+
+    X_std = sm.add_constant(panel_std[formula_vars].values.astype(np.float64))
+    y_np = panel_std["departed_within_2"].values.astype(np.float64)
+    groups_np = panel_std["icpsr"].values
+    time_np = panel_std["time"].values
+    col_names = ["const"] + formula_vars
+
+    indep_start = None
+
+    import warnings
+    warnings.filterwarnings("ignore")
+
+    panel_sorted["bli_scaled"] = panel_sorted["bli"] * 1000.0
+    fvars_scaled = ["bli_scaled", "ideology_distance", "seniority", "is_republican"]
+
+    X_full = sm.add_constant(panel_sorted[fvars_scaled].values.astype(np.float64))
+    y_full = panel_sorted["departed_within_2"].values.astype(np.float64)
+    g_full = panel_sorted["icpsr"].values
+    col_names_s = ["const"] + fvars_scaled
+
+    counts = panel_sorted.groupby("icpsr").size()
+    bal_ids = counts[(counts >= 2) & (counts <= 6)].index
+    panel_bal = panel_sorted[panel_sorted["icpsr"].isin(bal_ids)].reset_index(drop=True)
+    X_bal = sm.add_constant(panel_bal[fvars_scaled].values.astype(np.float64))
+    y_bal = panel_bal["departed_within_2"].values.astype(np.float64)
+    g_bal = panel_bal["icpsr"].values
+    time_bal = panel_bal["time"].values.astype(np.float64)
+
+    configs = [
+        ("independence", Independence, False),
+        ("exchangeable", Exchangeable, True),
+        ("ar1", Autoregressive, True),
+    ]
+
+    for struct_name, struct_cls, use_balanced in configs:
+        try:
+            kw = {}
+            if struct_name == "ar1":
+                kw["time"] = time_bal if use_balanced else time_np
+
+            X_use = X_bal if use_balanced else X_full
+            y_use = y_bal if use_balanced else y_full
+            g_use = g_bal if use_balanced else g_full
+            n_use = len(y_use)
+
+            model = GEE(
+                y_use, X_use, groups=g_use,
+                family=Binomial(),
+                cov_struct=struct_cls(),
+                **kw,
+            )
+            res = model.fit(maxiter=100)
+
+            params_raw = dict(zip(col_names_s, res.params.tolist()))
+            pvals = dict(zip(col_names_s, res.pvalues.tolist()))
+            bses_raw = dict(zip(col_names_s, res.bse.tolist()))
+
+            if np.isnan(params_raw["bli_scaled"]):
+                raise ValueError("NaN coefficients")
+
+            params_orig = {
+                "const": params_raw["const"],
+                "bli": params_raw["bli_scaled"] * 1000,
+                "ideology_distance": params_raw["ideology_distance"],
+                "seniority": params_raw["seniority"],
+                "is_republican": params_raw["is_republican"],
+            }
+            bses_orig = {
+                "const": bses_raw["const"],
+                "bli": bses_raw["bli_scaled"] * 1000,
+                "ideology_distance": bses_raw["ideology_distance"],
+                "seniority": bses_raw["seniority"],
+                "is_republican": bses_raw["is_republican"],
+            }
+            pvals_orig = {
+                "const": pvals["const"],
+                "bli": pvals["bli_scaled"],
+                "ideology_distance": pvals["ideology_distance"],
+                "seniority": pvals["seniority"],
+                "is_republican": pvals["is_republican"],
+            }
+
+            corr_sensitivity[struct_name] = {
+                "params": params_orig,
+                "pvalues": pvals_orig,
+                "bse": bses_orig,
+                "n": n_use,
+                "balanced_subsample": use_balanced,
+            }
+            print(f"  {struct_name} (n={n_use}): BLI coef={params_orig['bli']:.1f}, "
+                  f"p={pvals_orig['bli']:.2e}")
+        except Exception as e:
+            print(f"  {struct_name}: failed ({e})")
+            corr_sensitivity[struct_name] = {"error": str(e)}
+
     output = {
         "panel_stats": {
             "n_observations": len(panel),
@@ -192,6 +305,7 @@ def main():
             "pvalues": dict(zip(interaction_result.pvalues.index.tolist(), interaction_result.pvalues.values.tolist())),
         },
         "era_splits": era_results,
+        "correlation_sensitivity": corr_sensitivity,
     }
 
     with open(RESULTS_DIR / "bli_regression_results.json", "w") as f:

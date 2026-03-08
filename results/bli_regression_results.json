@@ -121,5 +121,82 @@
         "is_republican": 5.241587523204717e-07
       }
     }
+  },
+  "correlation_sensitivity": {
+    "independence": {
+      "params": {
+        "const": -1.3228195511186602,
+        "bli": 180.24545555843062,
+        "ideology_distance": 1.8368220657092793,
+        "seniority": 0.049530305294294565,
+        "is_republican": 0.2156519979094609
+      },
+      "pvalues": {
+        "const": 2.23360692045951e-66,
+        "bli": 1.824334510560414e-07,
+        "ideology_distance": 2.041206347549371e-06,
+        "seniority": 3.424119118471142e-07,
+        "is_republican": 0.0018610733530336385
+      },
+      "bse": {
+        "const": 0.07686334309871844,
+        "bli": 34.55360718987533,
+        "ideology_distance": 0.3867562716942598,
+        "seniority": 0.009714741229714288,
+        "is_republican": 0.06930691450641889
+      },
+      "n": 7500,
+      "balanced_subsample": false
+    },
+    "exchangeable": {
+      "params": {
+        "const": -1.6752053841489314,
+        "bli": 100.63918881781167,
+        "ideology_distance": 2.2394213933277944,
+        "seniority": 0.9795301587641567,
+        "is_republican": -0.054700425428232266
+      },
+      "pvalues": {
+        "const": 1.4447340676473761e-30,
+        "bli": 0.09676230612746743,
+        "ideology_distance": 0.0018776417749825412,
+        "seniority": 5.496045602440194e-85,
+        "is_republican": 0.6886561356670375
+      },
+      "bse": {
+        "const": 0.14576955597627406,
+        "bli": 60.59839133621677,
+        "ideology_distance": 0.7203182775546314,
+        "seniority": 0.050141400901508024,
+        "is_republican": 0.13651916552519947
+      },
+      "n": 3192,
+      "balanced_subsample": true
+    },
+    "ar1": {
+      "params": {
+        "const": -1.6759062977613393,
+        "bli": 57.77998560209592,
+        "ideology_distance": 2.6414750148747994,
+        "seniority": 0.9116185145917679,
+        "is_republican": -0.03990665588299095
+      },
+      "pvalues": {
+        "const": 6.309495699714491e-38,
+        "bli": 0.26786094626835333,
+        "ideology_distance": 4.26719855904406e-05,
+        "seniority": 1.2656676549006516e-98,
+        "is_republican": 0.7506493165472916
+      },
+      "bse": {
+        "const": 0.13017814192952368,
+        "bli": 52.14790667470204,
+        "ideology_distance": 0.6454405405012258,
+        "seniority": 0.04324972094989019,
+        "is_republican": 0.12557820199211342
+      },
+      "n": 3192,
+      "balanced_subsample": true
+    }
   }
 }

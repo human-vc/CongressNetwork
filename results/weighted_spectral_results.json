@@ -1,0 +1,79 @@
+{
+  "100": {
+    "weighted_fiedler": 0.7592606865943108,
+    "binary_fiedler": 0.533548250578459
+  },
+  "101": {
+    "weighted_fiedler": 0.7822740475717139,
+    "binary_fiedler": 0.5733468777060787
+  },
+  "102": {
+    "weighted_fiedler": 0.7364479119934527,
+    "binary_fiedler": 0.42314917455360124
+  },
+  "103": {
+    "weighted_fiedler": 0.6584903452653421,
+    "binary_fiedler": 0.23002032765648212
+  },
+  "104": {
+    "weighted_fiedler": 0.6217917013783143,
+    "binary_fiedler": 0.17754189363486922
+  },
+  "105": {
+    "weighted_fiedler": 0.7288543952352152,
+    "binary_fiedler": 0.44432921086600086
+  },
+  "106": {
+    "weighted_fiedler": 0.7757573535957676,
+    "binary_fiedler": 0.7063596655110247
+  },
+  "107": {
+    "weighted_fiedler": 0.7766381544998927,
+    "binary_fiedler": 0.8050199186828657
+  },
+  "108": {
+    "weighted_fiedler": 0.7204652299948119,
+    "binary_fiedler": 0.5388559567058762
+  },
+  "109": {
+    "weighted_fiedler": 0.7088231686080115,
+    "binary_fiedler": 0.4220801186365486
+  },
+  "110": {
+    "weighted_fiedler": 0.6485455040496545,
+    "binary_fiedler": 0.23840085412890505
+  },
+  "111": {
+    "weighted_fiedler": 0.7537363552882355,
+    "binary_fiedler": 0.7370051831603293
+  },
+  "112": {
+    "weighted_fiedler": 0.5053334293323253,
+    "binary_fiedler": 0.07281314845789419
+  },
+  "113": {
+    "weighted_fiedler": 0.5215990190237274,
+    "binary_fiedler": 0.03287702616862756
+  },
+  "114": {
+    "weighted_fiedler": 0.4694488061979303,
+    "binary_fiedler": 0.010109373479407744
+  },
+  "115": {
+    "weighted_fiedler": 0.5305622950479809,
+    "binary_fiedler": 0.04207207448921389
+  },
+  "116": {
+    "weighted_fiedler": 0.5255240202006413,
+    "binary_fiedler": 0.035008837376357536
+  },
+  "117": {
+    "weighted_fiedler": 0.5943791501478846,
+    "binary_fiedler": 0.08586238351932678
+  },
+  "118": {
+    "weighted_fiedler": 0.4928566372137765,
+    "binary_fiedler": 0.03179542120798076
+  },
+  "correlation": 0.9385639217342236
+}

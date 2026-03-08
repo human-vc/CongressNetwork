@@ -36,11 +36,23 @@ def main():
     from evaluate import main as run_evaluate
     run_evaluate()
 
-    print("\n[6/6] BLI Regression")
+    print("\n[6/9] BLI Regression")
     from bli_regression import main as run_bli
     run_bli()
 
-    print("\n[7/7] Figures")
+    print("\n[7/9] Null Model Analysis")
+    from null_model_analysis import main as run_null
+    run_null()
+
+    print("\n[8/9] Weighted Spectral Analysis")
+    from weighted_spectral import main as run_weighted
+    run_weighted()
+
+    print("\n[9/9] Vote Filtering Analysis")
+    from vote_filtering import main as run_filtering
+    run_filtering()
+
+    print("\n[10/10] Figures")
     from generate_figures import main as run_figures
     run_figures()
 

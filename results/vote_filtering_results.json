@@ -1,0 +1,174 @@
+{
+  "100": {
+    "full_votes_fiedler": 0.5335482505784591,
+    "substantive_only_fiedler": 0.5900965557488799,
+    "no_procedural_fiedler": 0.5900965557488805,
+    "no_suspension_fiedler": 0.5335482505784599,
+    "total_rollcalls": 939,
+    "substantive_rollcalls": 841,
+    "excluded_rollcalls": 98
+  },
+  "101": {
+    "full_votes_fiedler": 0.5733468777060787,
+    "substantive_only_fiedler": 0.5634988654552816,
+    "no_procedural_fiedler": 0.63878651946463,
+    "no_suspension_fiedler": 0.5071224823345442,
+    "total_rollcalls": 879,
+    "substantive_rollcalls": 720,
+    "excluded_rollcalls": 159
+  },
+  "102": {
+    "full_votes_fiedler": 0.4231491745536016,
+    "substantive_only_fiedler": 0.394932777455564,
+    "no_procedural_fiedler": 0.5007660936822849,
+    "no_suspension_fiedler": 0.3263610959247852,
+    "total_rollcalls": 901,
+    "substantive_rollcalls": 712,
+    "excluded_rollcalls": 189
+  },
+  "103": {
+    "full_votes_fiedler": 0.23002032765648206,
+    "substantive_only_fiedler": 0.2601774000493694,
+    "no_procedural_fiedler": 0.3537258670215333,
+    "no_suspension_fiedler": 0.15513824522162123,
+    "total_rollcalls": 1094,
+    "substantive_rollcalls": 857,
+    "excluded_rollcalls": 237
+  },
+  "104": {
+    "full_votes_fiedler": 0.17754189363486927,
+    "substantive_only_fiedler": 0.1584317273184593,
+    "no_procedural_fiedler": 0.22293082227929703,
+    "no_suspension_fiedler": 0.1211267796371741,
+    "total_rollcalls": 1321,
+    "substantive_rollcalls": 1064,
+    "excluded_rollcalls": 257
+  },
+  "105": {
+    "full_votes_fiedler": 0.4443292108660003,
+    "substantive_only_fiedler": 0.2809032767510412,
+    "no_procedural_fiedler": 0.5190798766797816,
+    "no_suspension_fiedler": 0.2533175459751747,
+    "total_rollcalls": 1166,
+    "substantive_rollcalls": 790,
+    "excluded_rollcalls": 376
+  },
+  "106": {
+    "full_votes_fiedler": 0.7063596655110254,
+    "substantive_only_fiedler": 0.335615154038073,
+    "no_procedural_fiedler": 0.7342460351944087,
+    "no_suspension_fiedler": 0.32791309737431173,
+    "total_rollcalls": 1209,
+    "substantive_rollcalls": 827,
+    "excluded_rollcalls": 382
+  },
+  "107": {
+    "full_votes_fiedler": 0.8050199186828666,
+    "substantive_only_fiedler": 0.21031407071440417,
+    "no_procedural_fiedler": 0.8375908674459037,
+    "no_suspension_fiedler": 0.26129954375426945,
+    "total_rollcalls": 990,
+    "substantive_rollcalls": 576,
+    "excluded_rollcalls": 414
+  },
+  "108": {
+    "full_votes_fiedler": 0.5388559567058768,
+    "substantive_only_fiedler": 0.09591273326833838,
+    "no_procedural_fiedler": 0.6981491328589696,
+    "no_suspension_fiedler": 0.0555846351564855,
+    "total_rollcalls": 1218,
+    "substantive_rollcalls": 736,
+    "excluded_rollcalls": 482
+  },
+  "109": {
+    "full_votes_fiedler": 0.42208011863654804,
+    "substantive_only_fiedler": 0.13001711904779956,
+    "no_procedural_fiedler": 0.5850202473960561,
+    "no_suspension_fiedler": 0.058176301457447024,
+    "total_rollcalls": 1210,
+    "substantive_rollcalls": 785,
+    "excluded_rollcalls": 425
+  },
+  "110": {
+    "full_votes_fiedler": 0.23840085412890516,
+    "substantive_only_fiedler": 0.0732675603213468,
+    "no_procedural_fiedler": 0.4729598286690821,
+    "no_suspension_fiedler": 0.023302412785198526,
+    "total_rollcalls": 1865,
+    "substantive_rollcalls": 1028,
+    "excluded_rollcalls": 837
+  },
+  "111": {
+    "full_votes_fiedler": 0.7370051831603284,
+    "substantive_only_fiedler": 0.11042653122512044,
+    "no_procedural_fiedler": 0.857629766172678,
+    "no_suspension_fiedler": 0.08161329338418302,
+    "total_rollcalls": 1647,
+    "substantive_rollcalls": 816,
+    "excluded_rollcalls": 831
+  },
+  "112": {
+    "full_votes_fiedler": 0.07281314845789405,
+    "substantive_only_fiedler": 0.03612599303219362,
+    "no_procedural_fiedler": 0.08351927842257445,
+    "no_suspension_fiedler": 0.03540439254298043,
+    "total_rollcalls": 1602,
+    "substantive_rollcalls": 1277,
+    "excluded_rollcalls": 325
+  },
+  "113": {
+    "full_votes_fiedler": 0.03287702616862731,
+    "substantive_only_fiedler": 0.019160230407583908,
+    "no_procedural_fiedler": 0.05245285077945546,
+    "no_suspension_fiedler": 0.013068561701718943,
+    "total_rollcalls": 1202,
+    "substantive_rollcalls": 845,
+    "excluded_rollcalls": 357
+  },
+  "114": {
+    "full_votes_fiedler": 0.010109373479407838,
+    "substantive_only_fiedler": 0.005465504643013263,
+    "no_procedural_fiedler": 0.0331110619079,
+    "no_suspension_fiedler": 0.003105676004344776,
+    "total_rollcalls": 1322,
+    "substantive_rollcalls": 969,
+    "excluded_rollcalls": 353
+  },
+  "115": {
+    "full_votes_fiedler": 0.04207207448921405,
+    "substantive_only_fiedler": 0.0023360008604544572,
+    "no_procedural_fiedler": 0.07338871852490887,
+    "no_suspension_fiedler": 0.014651359826904707,
+    "total_rollcalls": 1207,
+    "substantive_rollcalls": 741,
+    "excluded_rollcalls": 466
+  },
+  "116": {
+    "full_votes_fiedler": 0.03500883737635754,
+    "substantive_only_fiedler": 0.01568230052633685,
+    "no_procedural_fiedler": 0.06272179193595931,
+    "no_suspension_fiedler": 0.00941627108323975,
+    "total_rollcalls": 952,
+    "substantive_rollcalls": 661,
+    "excluded_rollcalls": 291
+  },
+  "117": {
+    "full_votes_fiedler": 0.0858623835193266,
+    "substantive_only_fiedler": 0.0034095704074070072,
+    "no_procedural_fiedler": 0.26197695005911686,
+    "no_suspension_fiedler": 0.0001980878684096344,
+    "total_rollcalls": 996,
+    "substantive_rollcalls": 509,
+    "excluded_rollcalls": 487
+  },
+  "118": {
+    "full_votes_fiedler": 0.031795421207980706,
+    "substantive_only_fiedler": 0.013157508693430353,
+    "no_procedural_fiedler": 0.058929935621560764,
+    "no_suspension_fiedler": 0.008921606698718665,
+    "total_rollcalls": 1235,
+    "substantive_rollcalls": 920,
+    "excluded_rollcalls": 315
+  },
+  "correlation": 0.6255907425904225
+}

@@ -83,6 +83,137 @@ def sig_stars(p):
     return ""
 
 
+def fig_null_model_band():
+    null_path = RESULTS_DIR / "null_model_results.json"
+    if not null_path.exists():
+        print("  null_model_band.pdf: no data (run null_model_analysis.py first)")
+        return
+
+    with open(null_path) as f:
+        null_data = json.load(f)
+
+    config = null_data["configuration_model"]
+    temporal = null_data.get("temporal_null", {})
+
+    congresses, empirical, null_mean, ci_lo, ci_hi = [], [], [], [], []
+    temp_mean = []
+    for c in CONGRESSES:
+        cs = str(c)
+        if cs not in config:
+            continue
+        congresses.append(c)
+        empirical.append(config[cs]["empirical"])
+        null_mean.append(config[cs]["null_mean"])
+        ci_lo.append(config[cs]["null_ci_lo"])
+        ci_hi.append(config[cs]["null_ci_hi"])
+        if cs in temporal:
+            temp_mean.append(temporal[cs]["mean"])
+        else:
+            temp_mean.append(None)
+
+    fig, ax = plt.subplots(figsize=(6.5, 3.5))
+
+    ax.fill_between(congresses, ci_lo, ci_hi, alpha=0.18, color=NEUTRAL,
+                    linewidth=0, zorder=1, label="Configuration model 95% CI")
+    ax.plot(congresses, null_mean, "--", color=NEUTRAL, linewidth=0.9,
+            alpha=0.7, zorder=2, label="Configuration model mean")
+
+    temp_c = [c for c, v in zip(congresses, temp_mean) if v is not None]
+    temp_v = [v for v in temp_mean if v is not None]
+    if temp_c:
+        ax.plot(temp_c, temp_v, ":", color=OI_ORANGE, linewidth=1.1,
+                alpha=0.85, zorder=2, label="Linear-decline null")
+
+    ax.plot(congresses, empirical, "o-", color=OI_BLUE, markersize=4,
+            linewidth=1.4, zorder=4, label=r"Empirical $\lambda_2$")
+
+    above = [(c, e) for c, e, hi in zip(congresses, empirical, ci_hi) if e > hi]
+    below = [(c, e) for c, e, lo in zip(congresses, empirical, ci_lo) if e < lo]
+
+    if above:
+        ax.scatter([c for c, _ in above], [e for _, e in above],
+                   marker="^", s=50, facecolors="none", edgecolors=OI_VERMILLION,
+                   linewidths=1.2, zorder=5)
+    if below:
+        ax.scatter([c for c, _ in below], [e for _, e in below],
+                   marker="v", s=50, facecolors="none", edgecolors=OI_VERMILLION,
+                   linewidths=1.2, zorder=5)
+
+    annotations = {107: "107th", 111: "111th"}
+    for c_ann, label in annotations.items():
+        if c_ann in congresses:
+            idx = congresses.index(c_ann)
+            e = empirical[idx]
+            hi = ci_hi[idx]
+            if e > hi:
+                ax.annotate(label, xy=(c_ann, e),
+                            xytext=(c_ann + 1.0, e + 0.04),
+                            fontsize=7, color=OI_VERMILLION,
+                            arrowprops=dict(arrowstyle="-", color=OI_VERMILLION,
+                                            linewidth=0.5),
+                            va="bottom", ha="left")
+
+    ax.set_xlabel("Congress")
+    ax.set_ylabel(r"Fiedler value ($\lambda_2$)")
+    ax.set_xlim(congresses[0] - 0.5, congresses[-1] + 0.5)
+    remove_spines(ax)
+    ax.legend(loc="upper right", fontsize=7)
+
+    fig.tight_layout()
+    fig.savefig(FIGURES_DIR / "null_model_band.pdf")
+    plt.close()
+    print("  null_model_band.pdf")
+
+
+def fig_weighted_comparison():
+    w_path = RESULTS_DIR / "weighted_spectral_results.json"
+    if not w_path.exists():
+        print("  weighted_comparison.pdf: no data (run weighted_spectral.py first)")
+        return
+
+    with open(w_path) as f:
+        w_data = json.load(f)
+
+    congresses, binary_vals, weighted_vals = [], [], []
+    for c in CONGRESSES:
+        cs = str(c)
+        if cs not in w_data or not isinstance(w_data[cs], dict):
+            continue
+        congresses.append(c)
+        binary_vals.append(w_data[cs]["binary_fiedler"])
+        weighted_vals.append(w_data[cs]["weighted_fiedler"])
+
+    corr = w_data.get("correlation", None)
+
+    fig, ax = plt.subplots(figsize=(6.5, 3.2))
+
+    ax.plot(congresses, binary_vals, "o-", color=OI_BLUE, markersize=4,
+            linewidth=1.4, label=r"Binary ($\tau = 0.5$)", zorder=3)
+    ax.plot(congresses, weighted_vals, "s--", color=OI_VERMILLION, markersize=3.5,
+            linewidth=1.2, label="Weighted (continuous)", zorder=3)
+
+    ax.fill_between(congresses, binary_vals, weighted_vals, alpha=0.06,
+                    color="#666666", linewidth=0, zorder=1)
+
+    ax.set_xlabel("Congress")
+    ax.set_ylabel(r"Fiedler value ($\lambda_2$)")
+    ax.set_xlim(congresses[0] - 0.5, congresses[-1] + 0.5)
+    remove_spines(ax)
+
+    legend_label = "Binary vs. weighted"
+    if corr is not None:
+        legend_label = f"$r = {corr:.3f}$"
+        ax.text(0.02, 0.03, legend_label, transform=ax.transAxes,
+                fontsize=7.5, color=DARK_TEXT, va="bottom", ha="left")
+
+    ax.legend(loc="upper right", fontsize=7.5)
+
+    fig.tight_layout()
+    fig.savefig(FIGURES_DIR / "weighted_comparison.pdf")
+    plt.close()
+    print("  weighted_comparison.pdf")
+
+
 def fig_fiedler_party_distance():
     spectral = load_json("spectral_results.json")
     nom_data = spectral.get("nominate_distance", {})
@@ -444,6 +575,8 @@ def main():
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     print("Generating figures...")
 
+    fig_null_model_band()
+    fig_weighted_comparison()
     fig_fiedler_party_distance()
     fig_sri_bars()
     fig_network_comparison()

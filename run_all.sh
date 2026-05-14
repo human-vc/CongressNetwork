@@ -114,16 +114,24 @@ if [ "$SKIP_INSTALL" -eq 0 ]; then
   echo "[$(ts)] Installing Python deps with pip (into the runtime python3)"
   echo "============================================================"
   # Use `python3 -m pip` not uv: it guarantees packages land in the exact
-  # interpreter the analysis scripts run under (sudo+uv --system installs to a
-  # different site-packages than the user's python3, causing import failures).
-  python3 -m pip install --upgrade pip 2>&1 | tee "$LOG_DIR/pip_bootstrap.log" || true
-  python3 -m pip install --break-system-packages -r requirements.txt \
-    2>&1 | tee "$LOG_DIR/pip_install.log"
+  # interpreter the analysis scripts run under. pip_install() tries a plain
+  # install first (works on old pip + unmanaged envs) and retries with
+  # --break-system-packages only if the env is PEP-668 externally-managed.
+  pip_install() {
+    python3 -m pip install "$@" 2>/tmp/pip_err.log && return 0
+    if grep -q "externally-managed\|break-system-packages" /tmp/pip_err.log; then
+      python3 -m pip install --break-system-packages "$@"
+    else
+      cat /tmp/pip_err.log >&2
+      return 1
+    fi
+  }
+  pip_install --upgrade pip 2>&1 | tee "$LOG_DIR/pip_bootstrap.log" || true
+  pip_install -r requirements.txt 2>&1 | tee "$LOG_DIR/pip_install.log"
   # geopandas is only needed for the optional compactness term in task #18;
   # it has a fragile GDAL ABI dependency, so install it best-effort and let
   # build_district_features.py degrade gracefully if it is unavailable.
-  python3 -m pip install --break-system-packages \
-    geopandas shapely fiona pyproj pyogrio \
+  pip_install geopandas shapely fiona pyproj pyogrio \
     2>&1 | tee "$LOG_DIR/pip_geopandas.log" || \
     echo "[$(ts)] WARN geopandas install failed -- compactness term will be NaN"
 

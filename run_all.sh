@@ -73,7 +73,7 @@ if [ "$SKIP_INSTALL" -eq 0 ]; then
   echo "============================================================"
   echo "[$(ts)] Installing R packages (this takes ~10 min)"
   echo "============================================================"
-  Rscript replication/scripts/install_r_packages.R 2>&1 | tee "$LOG_DIR/r_install.log"
+  $SUDO Rscript replication/scripts/install_r_packages.R 2>&1 | tee "$LOG_DIR/r_install.log"
 fi
 
 # 1. Data prep

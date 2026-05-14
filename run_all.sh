@@ -44,19 +44,46 @@ run() {
 if [ "$SKIP_INSTALL" -eq 0 ]; then
   echo
   echo "============================================================"
-  echo "[$(ts)] Installing system deps (R + GDAL/GEOS/PROJ)"
+  echo "[$(ts)] Installing system deps (R 4.4 from CRAN + GDAL/GEOS/PROJ)"
   echo "============================================================"
   if [ -x "$(command -v sudo)" ]; then SUDO=sudo; else SUDO=""; fi
-  if ! command -v R >/dev/null 2>&1; then
+
+  R_VERSION=""
+  if command -v R >/dev/null 2>&1; then
+    R_VERSION=$(R --version | head -1 | awk '{print $3}')
+  fi
+
+  # Ubuntu's stock R is 4.1; we need R >= 4.3. If R is missing or too old,
+  # install from CRAN's apt repo.
+  if [ -z "$R_VERSION" ] || dpkg --compare-versions "$R_VERSION" lt "4.3.0"; then
+    echo "[$(ts)] Adding CRAN APT repo for current R (have: ${R_VERSION:-none})"
     $SUDO apt-get update -y 2>&1 | tee "$LOG_DIR/apt_update.log" || true
+    $SUDO apt-get install -y --no-install-recommends \
+      dirmngr gnupg apt-transport-https ca-certificates software-properties-common wget \
+      2>&1 | tee -a "$LOG_DIR/apt_install.log"
+    $SUDO mkdir -p /etc/apt/keyrings
+    wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc \
+      | $SUDO gpg --dearmor -o /etc/apt/keyrings/cran.gpg
+    UBUNTU_CODENAME=$(lsb_release -cs 2>/dev/null || echo jammy)
+    echo "deb [signed-by=/etc/apt/keyrings/cran.gpg] https://cloud.r-project.org/bin/linux/ubuntu ${UBUNTU_CODENAME}-cran40/" \
+      | $SUDO tee /etc/apt/sources.list.d/cran.list
+    $SUDO apt-get update -y 2>&1 | tee -a "$LOG_DIR/apt_update.log" || true
+
+    # Remove stale R 4.1 + partially-built site library to avoid version conflicts
+    if [ -n "$R_VERSION" ] && dpkg --compare-versions "$R_VERSION" lt "4.3.0"; then
+      $SUDO apt-get purge -y 'r-base*' 'r-cran-*' 2>&1 | tee -a "$LOG_DIR/apt_install.log" || true
+      $SUDO rm -rf /usr/local/lib/R/site-library
+    fi
+
     $SUDO apt-get install -y --no-install-recommends \
       r-base r-base-dev \
       libgdal-dev libgeos-dev libproj-dev libudunits2-dev \
       libcurl4-openssl-dev libssl-dev libxml2-dev \
       libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
       libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev \
-      cmake pkg-config build-essential gfortran \
-      2>&1 | tee "$LOG_DIR/apt_install.log"
+      libgsl-dev libv8-dev libsodium-dev libnode-dev libfftw3-dev \
+      cmake pkg-config build-essential gfortran pandoc \
+      2>&1 | tee -a "$LOG_DIR/apt_install.log"
   fi
 
   echo

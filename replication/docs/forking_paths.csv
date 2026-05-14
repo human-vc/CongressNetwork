@@ -1,0 +1,26 @@
+decision_id,stage,choice_taken,alternatives,rationale,robustness_script
+1,graph_construction,binary threshold tau=0.5,"tau=0.4, 0.45, 0.55, 0.6, 0.7","majority agreement is the substantive boundary at which two members agree more than disagree",src/threshold_sensitivity.py
+2,graph_construction,unweighted adjacency,weighted normalized Laplacian,binary thresholding amplifies the bipartisan signal we measure; weighted analysis confirmed in §4.6,src/weighted_spectral.py
+3,vote_inclusion,all roll-call votes,"substantive policy votes only (exclude procedural + suspension)",full vote set is the default; substantive-only is reported in Appendix as sensitivity,src/vote_filtering.py
+4,bli_definition,leave-one-out brute force,first-order Kato approximation,brute force is the definition; first-order is the approximation that we verify against,src/bli_proof_verification.py
+5,bli_normalization,normalized Laplacian,combinatorial Laplacian,normalized handles degree heterogeneity; combinatorial would give a different sign convention,src/bli_theorem_verification.py
+6,cohort_DDD_eligibility,district competitive margin < 10pp,"5pp, 7pp, 15pp",10pp is the conventional Cook PVI competitive threshold,src/cohort_ddd.py
+7,DDD_era_cutoff,post-2010,"post-2008, post-2012",112th Congress is the canonical Tea Party wave,src/cohort_ddd.py
+8,recovery_ratio_definition,lambda2(post) / lambda2(pre),"lambda2(post) - lambda2(pre); ratio over rolling window",ratio is the canonical Imai resilience measure,src/recovery_threshold_sensitivity.py
+9,mediation_mediator,absolute DW-NOMINATE distance from chamber median,"absolute DW-NOMINATE position; CFscore",chamber-relative centrism is the substantive mediator,src/mediation_analysis.py
+10,mediation_estimator,quasi-Bayesian Monte Carlo,nonparametric bootstrap,Imai-Keele-Tingley default; bootstrap reported as sensitivity in §8,src/causalweight_mediation.R
+11,GEE_correlation,independence,"exchangeable, AR(1)","independence is most flexible; corr structure tested in Appendix",src/bli_regression.py
+12,GEE_clustering,member-level,"state-level, no clustering",members are the panel unit,src/bli_regression.py
+13,counterfactual_perturbation_k,40 moderates,"20, 30, 50",sensitivity grid in Appendix; 40 is the default,src/counterfactual_sensitivity.py
+14,counterfactual_committee_overlap,any shared committee,"two shared committees; no filter",any-shared is the loosest plausible criterion,src/counterfactual_sensitivity.py
+15,SBM_benchmark_density,degree-matched bridges,"degree-balanced; degree-unmatched",degree match isolates topological signal from degree confound,src/sbm_benchmark_brev.py
+16,SBM_benchmark_k_main,"{2, 3, 5, 10}","{2, 5, 10}",full grid for completeness; 2 is the regime that matches the U.S. House,src/sbm_benchmark_brev.py
+17,death_exposure_radius,within-state-and-party,within-party only,within-state-and-party is the cleanest peer definition,src/death_in_office.py
+18,senate_threshold,tau=0.6 for bicameral DiD,tau=0.5,filibuster pushes Senate baseline cooperation higher; tau=0.6 is comparable,src/senate_analysis.py
+19,placebo_Congresses,"102nd, 106th, 108th","100th, 104th",chosen to span pre-1990 and post-2000 eras,src/placebo_loocv.py
+20,specification_curve_grid,96 specifications,"32, 256",96 covers all interactions among 3 controls × 4 thresholds × 3 eras × 2 working-correlations,src/specr_curve.R
+21,negative_control_outcomes,"successor centrism, suspension yea-rate, education years",other auxiliary outcomes,chosen for U-comparability with the maintained DAG,src/negative_controls.py
+22,RDiT_bandwidth,Calonico-Cattaneo-Titiunik MSE-optimal,"fixed 2pp, 5pp",CCT-optimal is the conventional default,src/rdit_close_margins.R
+23,IV_cluster,state-level,district-level,instrument varies at state-decade level; state clustering is correct,src/iv_redistricting.R
+24,EP_threshold,tau=0.5,"tau=0.6, 0.7",same as House for cross-comparability,src/ep_bli_all_terms.py
+25,EP_group_assignment,terminal-Congress group,"modal group, first-Congress group",terminal captures the most recent ideological commitment,src/ep_bli_all_terms.py

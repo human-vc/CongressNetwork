@@ -1,0 +1,138 @@
+---
+title: "GATCongress replication manifest"
+author: "Jacob Crainic"
+format: html
+execute:
+  echo: true
+  eval: false
+---
+
+# Replication manifest
+
+This document is the single entry point that re-runs every analysis behind
+the paper. It is paired with `Dockerfile` and `run_all.sh` for full
+reproducibility. Each chunk below corresponds to one stage in the pipeline.
+
+## Environment
+
+```{bash}
+#| label: env
+bash run_all.sh --skip-install
+```
+
+If running outside Docker, install dependencies first:
+
+```{bash}
+#| label: install-py
+uv pip install --system -r requirements.txt
+```
+
+```{bash}
+#| label: install-r
+Rscript replication/scripts/install_r_packages.R
+```
+
+## Stage 1 — Data acquisition
+
+```{bash}
+#| label: data
+python3 data/download_voteview.py
+python3 data/download_ep_data.py
+python3 src/build_district_features.py
+```
+
+## Stage 2 — Spectral analysis and BLI
+
+```{bash}
+#| label: spectral
+python3 src/spectral_analysis.py
+python3 src/weighted_spectral.py
+python3 src/bli_brute_force.py
+python3 src/bli_regression.py
+```
+
+## Stage 3 — Theoretical verification
+
+```{bash}
+#| label: theorems
+python3 src/bli_theorem_verification.py
+python3 src/bli_proof_verification.py
+python3 src/sbm_concentration_verify.py --scale large
+python3 src/bli_clt_verify.py --scale large
+python3 src/sbm_benchmark_brev.py --scale large
+```
+
+## Stage 4 — Causal identification
+
+```{bash}
+#| label: causal
+python3 src/cohort_ddd.py
+python3 src/staggered_did.py
+python3 src/honest_did.py
+python3 src/mediation_analysis.py
+python3 src/death_in_office.py
+python3 src/senate_analysis.py
+python3 src/freshman_cohort_analysis.py
+```
+
+## Stage 5 — R-based DiD comparators and sensitivity
+
+```{bash}
+#| label: r-did
+Rscript src/did_comparator.R results/mediation_panel.csv results/did_comparator.json
+Rscript src/fect_placebo.R
+Rscript src/specr_curve.R
+Rscript src/rdit_close_margins.R results/mediation_panel.csv results/rdit.json
+Rscript src/iv_redistricting.R results/mediation_panel.csv results/iv.json
+Rscript src/sdid_bicameral.R results/senate_panel.csv results/sdid.json
+Rscript src/interflex_gerrymandering.R
+Rscript src/interference_death.R
+Rscript src/causalweight_mediation.R
+Rscript src/bayes_factor_dfbetas.R
+```
+
+## Stage 6 — Robustness battery
+
+```{bash}
+#| label: robust
+python3 src/negative_controls.py
+python3 src/placebo_loocv.py
+python3 src/null_model_analysis.py
+python3 src/counterfactual_sensitivity.py
+python3 src/recovery_threshold_sensitivity.py
+python3 src/sensitivity_sweep.py
+python3 src/vote_filtering.py
+python3 src/centrality_comparison.py
+```
+
+## Stage 7 — Cross-national transfer
+
+```{bash}
+#| label: ep
+python3 src/ep_bli_all_terms.py
+```
+
+## Stage 8 — Figures and tables
+
+```{bash}
+#| label: figures
+python3 src/generate_figures.py
+python3 src/skeleton_network.py
+python3 src/alluvial_data_prep.py
+Rscript src/alluvial_coalitions.R
+```
+
+## Stage 9 — Compile paper
+
+```{bash}
+#| label: paper
+cd paper && tectonic paper.tex
+```
+
+## Stage 10 — Snapshot environment for replication
+
+```{bash}
+#| label: snapshot
+Rscript -e 'renv::snapshot(prompt = FALSE)'
+uv lock
+```

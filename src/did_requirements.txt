@@ -1,0 +1,17 @@
+# R deps -- install once via:
+#   Rscript -e 'install.packages(c("pacman","data.table","jsonlite","future","future.apply","DIDmultiplegtDYN","didimputation","fect","triplediff","fixest"), repos="https://cloud.r-project.org")'
+#
+# Package              | Version  | Provides                            | Parallel option
+# -------------------- | -------- | ----------------------------------- | -----------------------------
+# DIDmultiplegtDYN     | >= 1.0.16| de Chaisemartin-D'Haultfoeuille IW  | analytic SE (no bootstrap by default); bootstrap=list(reps, seed) optional
+# didimputation        | >= 0.5.0 | Borusyak-Jaravel-Spiess imputation  | single-threaded; fast (uses fixest internally)
+# fect                 | >= 2.0.0 | Liu-Wang-Xu FE counterfactual       | parallel=TRUE, cores=N; on macOS set future::plan(multisession)
+# triplediff           | >= 0.2.0 | Ortiz-Villavicencio/Sant'Anna DDD   | single-threaded; uses mboot for multiplier bootstrap SEs
+# fixest               | >= 0.12  | Backend for didimputation/did2s     | OpenMP via setFixest_nthreads(N)
+# data.table           | >= 1.15  | IO & panel reshapes                 | setDTthreads(N)
+# jsonlite, future, future.apply, pacman: glue
+#
+# Python deps (pip):
+#   pandas>=2.2
+#   numpy>=1.26
+# (no Python ML deps -- this wrapper only shells out to Rscript)

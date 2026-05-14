@@ -111,20 +111,20 @@ if [ "$SKIP_INSTALL" -eq 0 ]; then
 
   echo
   echo "============================================================"
-  echo "[$(ts)] Installing Python deps with uv"
+  echo "[$(ts)] Installing Python deps with pip (into the runtime python3)"
   echo "============================================================"
-  if ! command -v uv >/dev/null 2>&1; then
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.local/bin:$PATH"
-  fi
-  $SUDO env "PATH=$PATH" uv pip install --system --break-system-packages -r requirements.txt \
-    2>&1 | tee "$LOG_DIR/uv_install.log"
+  # Use `python3 -m pip` not uv: it guarantees packages land in the exact
+  # interpreter the analysis scripts run under (sudo+uv --system installs to a
+  # different site-packages than the user's python3, causing import failures).
+  python3 -m pip install --upgrade pip 2>&1 | tee "$LOG_DIR/pip_bootstrap.log" || true
+  python3 -m pip install --break-system-packages -r requirements.txt \
+    2>&1 | tee "$LOG_DIR/pip_install.log"
   # geopandas is only needed for the optional compactness term in task #18;
   # it has a fragile GDAL ABI dependency, so install it best-effort and let
   # build_district_features.py degrade gracefully if it is unavailable.
-  $SUDO env "PATH=$PATH" uv pip install --system --break-system-packages \
+  python3 -m pip install --break-system-packages \
     geopandas shapely fiona pyproj pyogrio \
-    2>&1 | tee "$LOG_DIR/uv_geopandas.log" || \
+    2>&1 | tee "$LOG_DIR/pip_geopandas.log" || \
     echo "[$(ts)] WARN geopandas install failed -- compactness term will be NaN"
 
   echo

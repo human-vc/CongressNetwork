@@ -115,6 +115,7 @@ fi
 # 1. Data prep
 if [ "$R_ONLY" -eq 0 ]; then
   run "download_voteview"        "python3 data/download_voteview.py"
+  run "download_medsl"           "python3 src/medsl_data.py"
   run "download_ep_data"         "python3 data/download_ep_data.py"
   run "build_district_features"  "python3 src/build_district_features.py"
 fi

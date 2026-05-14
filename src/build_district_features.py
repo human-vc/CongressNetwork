@@ -195,8 +195,16 @@ def compute_margins() -> pd.DataFrame:
     # Primary margins
     pri = fetch_medsl_primary()
     if pri.empty:
-        gen_wide["primary_margin"] = np.nan
-        return gen_wide[["state_po", "district_num", "year", "primary_margin", "general_margin"]]
+        # Fallback: when the MEDSL primary dataset is unreachable, use the
+        # general-election margin as a proxy for district-level electoral
+        # competitiveness. interflex still runs; the third interaction term is
+        # then competitiveness rather than strict primary intensity. Flagged
+        # in the output and in the paper's interflex caption.
+        print("  primary download unavailable; using general_margin as the competitiveness proxy")
+        gen_wide["primary_margin"] = gen_wide["general_margin"]
+        gen_wide["primary_margin_is_proxy"] = True
+        return gen_wide[["state_po", "district_num", "year", "primary_margin",
+                          "general_margin", "primary_margin_is_proxy"]]
 
     # MEDSL primary tab columns mirror the general one. Rename to be safe.
     cols = {c.lower(): c for c in pri.columns}
@@ -269,8 +277,11 @@ def main():
     print("[3/3] Joining and writing results/district_features.csv")
     out = margins.merge(compactness, on=["state_fips", "district_num", "congress"], how="left")
     out["district_id"] = out["state_po"].astype(str) + "-" + out["district_num"].astype(str)
+    if "primary_margin_is_proxy" not in out.columns:
+        out["primary_margin_is_proxy"] = False
     cols = ["district_id", "congress", "state_po", "district_num",
-            "compactness_pp", "primary_margin", "general_margin"]
+            "compactness_pp", "primary_margin", "general_margin",
+            "primary_margin_is_proxy"]
     out = out[cols].sort_values(["congress", "state_po", "district_num"]).reset_index(drop=True)
     out_path = RESULTS / "district_features.csv"
     out.to_csv(out_path, index=False)

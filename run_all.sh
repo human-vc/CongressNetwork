@@ -75,15 +75,24 @@ if [ "$SKIP_INSTALL" -eq 0 ]; then
       $SUDO rm -rf /usr/local/lib/R/site-library
     fi
 
+    # CRAN packages declare a Breaks against legacy pkg-config; switch to pkgconf
+    $SUDO apt-get install -y pkgconf 2>&1 | tee -a "$LOG_DIR/apt_install.log" || \
+      $SUDO apt-get install -y -o Dpkg::Options::="--force-overwrite" pkgconf 2>&1 | tee -a "$LOG_DIR/apt_install.log"
+
+    # Step 1: install R 4.4 from CRAN
+    $SUDO apt-get install -y --no-install-recommends r-base r-base-dev \
+      2>&1 | tee -a "$LOG_DIR/apt_install.log"
+
+    # Step 2: system libs for the R+Python C/C++ deps (separate call so a failing
+    # optional dep doesn't block R itself)
     $SUDO apt-get install -y --no-install-recommends \
-      r-base r-base-dev \
       libgdal-dev libgeos-dev libproj-dev libudunits2-dev \
       libcurl4-openssl-dev libssl-dev libxml2-dev \
       libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
       libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev \
       libgsl-dev libv8-dev libsodium-dev libnode-dev libfftw3-dev \
-      cmake pkg-config build-essential gfortran pandoc \
-      2>&1 | tee -a "$LOG_DIR/apt_install.log"
+      cmake build-essential gfortran pandoc \
+      2>&1 | tee -a "$LOG_DIR/apt_install.log" || true
   fi
 
   echo

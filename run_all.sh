@@ -119,6 +119,13 @@ if [ "$SKIP_INSTALL" -eq 0 ]; then
   fi
   $SUDO env "PATH=$PATH" uv pip install --system --break-system-packages -r requirements.txt \
     2>&1 | tee "$LOG_DIR/uv_install.log"
+  # geopandas is only needed for the optional compactness term in task #18;
+  # it has a fragile GDAL ABI dependency, so install it best-effort and let
+  # build_district_features.py degrade gracefully if it is unavailable.
+  $SUDO env "PATH=$PATH" uv pip install --system --break-system-packages \
+    geopandas shapely fiona pyproj pyogrio \
+    2>&1 | tee "$LOG_DIR/uv_geopandas.log" || \
+    echo "[$(ts)] WARN geopandas install failed -- compactness term will be NaN"
 
   echo
   echo "============================================================"

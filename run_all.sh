@@ -28,8 +28,11 @@ done
 ts() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 run() {
   local name="$1" cmd="$2"
+  echo
+  echo "============================================================"
   echo "[$(ts)] START $name"
-  if /usr/bin/time -v bash -c "$cmd" > "$LOG_DIR/$name.log" 2>&1; then
+  echo "============================================================"
+  if /usr/bin/time -v bash -c "$cmd" 2>&1 | tee "$LOG_DIR/$name.log"; then
     echo "[$(ts)] OK    $name"
   else
     echo "[$(ts)] FAIL  $name (see $LOG_DIR/$name.log)"
@@ -39,10 +42,13 @@ run() {
 
 # 0. Install deps
 if [ "$SKIP_INSTALL" -eq 0 ]; then
+  echo
+  echo "============================================================"
   echo "[$(ts)] Installing system deps (R + GDAL/GEOS/PROJ)"
+  echo "============================================================"
   if [ -x "$(command -v sudo)" ]; then SUDO=sudo; else SUDO=""; fi
   if ! command -v R >/dev/null 2>&1; then
-    $SUDO apt-get update -y > "$LOG_DIR/apt_update.log" 2>&1 || true
+    $SUDO apt-get update -y 2>&1 | tee "$LOG_DIR/apt_update.log" || true
     $SUDO apt-get install -y --no-install-recommends \
       r-base r-base-dev \
       libgdal-dev libgeos-dev libproj-dev libudunits2-dev \
@@ -50,18 +56,24 @@ if [ "$SKIP_INSTALL" -eq 0 ]; then
       libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
       libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev \
       cmake pkg-config build-essential gfortran \
-      > "$LOG_DIR/apt_install.log" 2>&1
+      2>&1 | tee "$LOG_DIR/apt_install.log"
   fi
 
+  echo
+  echo "============================================================"
   echo "[$(ts)] Installing Python deps with uv"
+  echo "============================================================"
   if ! command -v uv >/dev/null 2>&1; then
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
   fi
-  uv pip install --system -r requirements.txt > "$LOG_DIR/uv_install.log" 2>&1
+  uv pip install --system -r requirements.txt 2>&1 | tee "$LOG_DIR/uv_install.log"
 
+  echo
+  echo "============================================================"
   echo "[$(ts)] Installing R packages (this takes ~10 min)"
-  Rscript replication/scripts/install_r_packages.R > "$LOG_DIR/r_install.log" 2>&1
+  echo "============================================================"
+  Rscript replication/scripts/install_r_packages.R 2>&1 | tee "$LOG_DIR/r_install.log"
 fi
 
 # 1. Data prep

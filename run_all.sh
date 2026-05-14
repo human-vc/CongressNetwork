@@ -67,7 +67,7 @@ if [ "$SKIP_INSTALL" -eq 0 ]; then
     curl -LsSf https://astral.sh/uv/install.sh | sh
     export PATH="$HOME/.local/bin:$PATH"
   fi
-  uv pip install --system -r requirements.txt 2>&1 | tee "$LOG_DIR/uv_install.log"
+  $SUDO env "PATH=$PATH" uv pip install --system --break-system-packages -r requirements.txt 2>&1 | tee "$LOG_DIR/uv_install.log"
 
   echo
   echo "============================================================"

@@ -152,6 +152,13 @@ run "data_pipeline"           "python3 src/data_pipeline.py"
 run "build_district_features" "python3 src/build_district_features.py"
 
 # ============================================================
+# Stage 1.5 - Derived covariates (substantive mediator + departure types)
+# Must run before bli_regression / mediation / negative_controls.
+# ============================================================
+run "compute_party_unity"     "python3 src/compute_party_unity.py"
+run "build_departure_types"   "python3 src/build_departure_types.py"
+
+# ============================================================
 # Stage 2 - Core spectral analysis + BLI
 # ============================================================
 run "spectral_analysis"  "python3 src/spectral_analysis.py"

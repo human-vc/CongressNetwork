@@ -12,6 +12,26 @@ from statsmodels.genmod.generalized_estimating_equations import GEE
 from statsmodels.genmod.families import Binomial
 from statsmodels.genmod.cov_struct import Independence, Exchangeable, Autoregressive
 
+try:
+    import pyfixest as pf
+    _HAS_PYFIXEST = True
+except Exception:
+    _HAS_PYFIXEST = False
+
+
+def attach_departure_types(panel):
+    """Merge in the 5-way departure classification when available.
+    Adds: in_next, departed_voluntary_or_primary, lost_general, died_in_office,
+          ran_for_higher_office, departure_type."""
+    p = RESULTS_DIR / "departure_types.csv"
+    if not p.exists():
+        return panel
+    dt = pd.read_csv(p)
+    keep = ["icpsr", "congress", "in_next", "did_not_seek_general",
+            "lost_general", "died_in_office", "ran_for_higher_office",
+            "departure_type"]
+    return panel.merge(dt[keep], on=["icpsr", "congress"], how="left")
+
 
 def build_panel():
     bli_path = RESULTS_DIR / "bli_results.json"
@@ -86,7 +106,67 @@ def build_panel():
                 "nominate_dim1": nom,
             })
 
-    return pd.DataFrame(rows)
+    panel = pd.DataFrame(rows)
+    panel = attach_departure_types(panel)
+    return panel
+
+
+def iqr_scale_effects(coef, se, panel, var="bli", base_rate=None):
+    """Translate a logit coefficient into IQR-scale magnitudes that reviewers
+    can read without unit confusion. Returns effect_iqr (logit), odds_ratio_iqr,
+    risk_ratio_iqr (at base_rate), and E-value.
+    """
+    x = panel[var].dropna().values
+    iqr = float(np.quantile(x, 0.75) - np.quantile(x, 0.25))
+    eff = coef * iqr
+    or_iqr = float(np.exp(eff))
+    if base_rate is None:
+        base_rate = float(panel["departed_within_2"].mean())
+    # Risk ratio approximation from odds ratio + base rate (VanderWeele 2017).
+    rr_iqr = or_iqr / (1 - base_rate + base_rate * or_iqr)
+    # E-value (VanderWeele & Ding 2017).
+    rr_e = max(rr_iqr, 1 / rr_iqr)
+    e_value = rr_e + np.sqrt(rr_e * (rr_e - 1)) if rr_e >= 1 else np.nan
+    se_eff_iqr = abs(se * iqr)
+    return {
+        "bli_iqr": iqr,
+        "effect_iqr_logit": float(eff),
+        "effect_iqr_se": float(se_eff_iqr),
+        "odds_ratio_iqr": or_iqr,
+        "risk_ratio_iqr": float(rr_iqr),
+        "base_rate": base_rate,
+        "e_value": float(e_value) if np.isfinite(e_value) else None,
+    }
+
+
+def fit_member_fe_lpm(panel, outcome="departed_within_2"):
+    """Linear probability model with two-way fixed effects (member + congress).
+    Singletons are dropped by pyfixest. Standard errors clustered by icpsr.
+    """
+    if not _HAS_PYFIXEST:
+        return {"error": "pyfixest not installed"}
+    sub = panel.dropna(subset=[outcome, "bli", "ideology_distance", "seniority"]).copy()
+    sub[outcome] = sub[outcome].astype(float)
+    try:
+        m = pf.feols(
+            f"{outcome} ~ bli + ideology_distance + seniority | icpsr + congress",
+            data=sub,
+            vcov={"CRV1": "icpsr"},
+        )
+        coef = float(m.coef()["bli"])
+        se = float(m.se()["bli"])
+        pval = float(m.pvalue()["bli"])
+        iqr_eff = iqr_scale_effects(coef, se, sub, var="bli")
+        return {
+            "coef": coef, "se": se, "p": pval,
+            "n_obs": int(m._N),
+            "n_members": int(sub["icpsr"].nunique()),
+            "iqr_scale": iqr_eff,
+            "outcome": outcome,
+            "note": "LPM coefficients are probability points; iqr_scale.effect_iqr_logit is on the LPM (linear-probability) scale.",
+        }
+    except Exception as e:
+        return {"error": str(e), "outcome": outcome}
 
 
 def run_gee(panel, include_bli=True, label=""):
@@ -299,6 +379,31 @@ def main():
             print(f"  {struct_name}: failed ({e})")
             corr_sensitivity[struct_name] = {"error": str(e)}
 
+    # --- Headline IQR-scale effect on the main GEE coefficient ---
+    bli_coef_main = float(result_with_bli.params["bli"])
+    bli_se_main = float(result_with_bli.bse["bli"])
+    iqr_main = iqr_scale_effects(bli_coef_main, bli_se_main, panel, var="bli")
+    print(f"\n--- Headline IQR-scale effects ---")
+    print(f"  BLI IQR: {iqr_main['bli_iqr']:.5f}")
+    print(f"  Effect at IQR (logit): {iqr_main['effect_iqr_logit']:.3f}")
+    print(f"  Odds-ratio at IQR: {iqr_main['odds_ratio_iqr']:.3f}")
+    print(f"  Risk-ratio at IQR: {iqr_main['risk_ratio_iqr']:.3f}")
+    print(f"  E-value: {iqr_main['e_value']}")
+
+    # --- Member + Congress fixed-effects LPM (pyfixest) ---
+    print("\n--- Two-way FE LPM (member + congress) on departed_within_2 ---")
+    fe_default = fit_member_fe_lpm(panel, outcome="departed_within_2")
+    print(f"  result: {fe_default}")
+
+    # --- FE LPM on substantive 'departed by choice / primary' subset ---
+    fe_voluntary = None
+    if "did_not_seek_general" in panel.columns:
+        panel_v = panel.copy()
+        panel_v["voluntary_or_primary"] = panel_v["did_not_seek_general"].fillna(0).astype(int)
+        print("\n--- FE LPM on did_not_seek_general (voluntary + primary loss) ---")
+        fe_voluntary = fit_member_fe_lpm(panel_v, outcome="voluntary_or_primary")
+        print(f"  result: {fe_voluntary}")
+
     output = {
         "panel_stats": {
             "n_observations": len(panel),
@@ -306,6 +411,9 @@ def main():
             "n_unique_members": int(panel["icpsr"].nunique()),
             "departure_rate": float(panel["departed_within_2"].mean()),
         },
+        "headline_iqr_scale_effects": iqr_main,
+        "member_congress_fe_lpm": fe_default,
+        "member_congress_fe_lpm_voluntary_or_primary": fe_voluntary,
         "without_bli": {
             "params": dict(zip(result_no_bli.params.index.tolist(), result_no_bli.params.values.tolist())),
             "pvalues": dict(zip(result_no_bli.pvalues.index.tolist(), result_no_bli.pvalues.values.tolist())),

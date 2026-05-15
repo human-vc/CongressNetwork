@@ -43,6 +43,10 @@ warnings.filterwarnings("ignore")
 
 
 def fiedler_triple(A):
+    """Return (lam2, lam3, psi, kept_mask). psi rows for disconnected vertices
+    are returned as NaN so callers can mask them rather than treat a fake
+    zero embedding as a real eigenvector entry.
+    """
     n = A.shape[0]
     if not sparse.issparse(A):
         A = sparse.csr_matrix(A)
@@ -64,18 +68,25 @@ def fiedler_triple(A):
     order = np.argsort(w)
     w = w[order]
     v = v[:, order]
-    psi = np.zeros((n, 3))
+    psi = np.full((n, 3), np.nan)
     psi[np.where(keep)[0], :] = v
-    return float(w[1]), float(w[2]), psi
+    return float(w[1]), float(w[2]), psi, keep
 
 
 def first_order_bli(A):
+    """First-order BLI vector with degree-0 vertices masked to NaN.
+
+    Returning NaN for disconnected vertices avoids the bias from imputing
+    psi=0 (which would give BLI = lam3-lam2, the maximum) at low SBM density.
+    """
     out = fiedler_triple(A)
     if out is None:
         return None
-    lam2, lam3, psi = out
+    lam2, lam3, psi, keep = out
     gap = lam3 - lam2
-    return gap * (1.0 - psi[:, 1] ** 2)
+    bli = np.full(psi.shape[0], np.nan)
+    bli[keep] = gap * (1.0 - psi[keep, 1] ** 2)
+    return bli
 
 
 def degree_matched_q_bridge(m, b, p_in, p_out, k_main):
@@ -106,17 +117,22 @@ def one_cell(m, b, p_in, p_out, k_main, L, base_seed):
         A = gen_sbm(m, b, p_in, p_out, k_main, seed=base_seed + s)
         if A.sum() == 0:
             continue
-        bli = first_order_bli(A)
-        if bli is None:
-            continue
         out = fiedler_triple(A)
+        if out is None:
+            continue
+        lam2, lam3, psi, keep = out
+        gap = lam3 - lam2
+        bli = np.full(n_total, np.nan)
+        bli[keep] = gap * (1.0 - psi[keep, 1] ** 2)
         bli_samples.append(bli)
-        pop_lam.append(out[1] - out[0])
+        pop_lam.append(lam3 - lam2)
     if len(bli_samples) < 5:
         return None
     bli_samples = np.stack(bli_samples, axis=0)
-    bli_pop = bli_samples.mean(axis=0)
-    abs_err = np.abs(bli_samples - bli_pop[None, :]).mean()
+    bli_pop = np.nanmean(bli_samples, axis=0)
+    diffs = np.abs(bli_samples - bli_pop[None, :])
+    # Mask vertex-replicates that lacked a valid BLI (disconnected in that draw).
+    abs_err = float(np.nanmean(diffs))
     gamma_star = float(np.mean(pop_lam))
     predicted = np.sqrt(max(np.log(n_total), 1.0) / max(np_min, 1.0)) / max(gamma_star, 1e-6)
     return {
@@ -124,6 +140,7 @@ def one_cell(m, b, p_in, p_out, k_main, L, base_seed):
         "np_min": float(np_min), "log_n_over_np_min": float(np.log(n_total) / np_min),
         "gamma_star": gamma_star,
         "L": int(len(bli_samples)),
+        "frac_disconnected": float(np.mean(np.isnan(bli_samples))),
         "mean_abs_err": float(abs_err),
         "predicted_rate": float(predicted),
         "err_over_predicted": float(abs_err / predicted) if predicted > 0 else np.nan,

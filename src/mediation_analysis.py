@@ -139,6 +139,16 @@ def build_panel():
             })
 
     panel = pd.DataFrame(rows)
+
+    # --- Substantive mediator: Carson-Koger-Lebo-Young / CQ party-unity score.
+    # See compute_party_unity.py. We invert so that higher values mean
+    # MORE bridge-like (less party-line voting) -> easier to interpret as
+    # a behavioural mechanism distinct from centrism.
+    pu_path = RESULTS_DIR / "party_unity.csv"
+    if pu_path.exists():
+        pu = pd.read_csv(pu_path)[["congress", "icpsr", "party_unity"]]
+        pu["one_minus_party_unity"] = 1.0 - pu["party_unity"]
+        panel = panel.merge(pu, on=["congress", "icpsr"], how="left")
     return panel
 
 
@@ -356,20 +366,47 @@ def main():
     print(f"Departure rate: {panel['departed'].mean():.3f}")
     print()
 
+    # --- MAIN spec: substantive mediator (party-unity defection rate).
+    # Carson, Koger, Lebo & Young (2010, AJPS) document a behavioural pipeline
+    # bridging -> cross-party voting -> primary/general electoral cost ->
+    # retirement decision. one_minus_party_unity is the share of party-line
+    # votes on which the member defected -- distinct from BLI (a structural
+    # network statistic) and from centrism (= -|NOMINATE_dim1|, near-tautology).
+    main_result = None
+    if "one_minus_party_unity" in panel.columns and panel["one_minus_party_unity"].notna().sum() > 100:
+        cor_pu_bli = float(panel[["bli", "one_minus_party_unity"]].dropna().corr().iloc[0, 1])
+        cor_centrism_bli = float(panel[["bli", "centrism"]].dropna().corr().iloc[0, 1])
+        print(f"  cor(BLI, 1-party_unity) = {cor_pu_bli:.3f}")
+        print(f"  cor(BLI, centrism)      = {cor_centrism_bli:.3f}  (near-tautology cf. CKLY 2010)")
+        main_result = fit_mediation_r(
+            panel, "bli", "one_minus_party_unity", "departed", controls_for_r,
+            label="main_party_unity_defection",
+        )
+        print(f"Main (party-unity defection) ACME: {main_result['acme_average']['estimate']}")
+        print(f"  CI: {main_result['acme_average']['ci']}")
+        print(f"  Proportion mediated: {main_result['proportion_mediated']['estimate']}")
+        plot_sensitivity(
+            main_result.get("sensitivity"),
+            "Mediation sensitivity: BLI -> defection (1 - party unity) -> departure",
+            FIGURES_DIR / "mediation_sensitivity_party_unity.pdf",
+        )
+
+    # --- COMPARATOR spec: centrism (kept for transparency; flagged as
+    # near-tautological with BLI since centrism = -|NOMINATE_dim1| measures
+    # the same latent moderation construct BLI is built from).
     full_result = fit_mediation_r(
         panel, "bli", "centrism", "departed", controls_for_r,
-        label="full_panel",
+        label="comparator_centrism_near_tautology",
     )
-    print(f"Full panel ACME: {full_result['acme_average']['estimate']}")
-    print(f"  CI: {full_result['acme_average']['ci']}")
+    print(f"Comparator (centrism) ACME: {full_result['acme_average']['estimate']}")
     print(f"  Proportion mediated: {full_result['proportion_mediated']['estimate']}")
-    print(f"  Breakdown rho: {full_result.get('sensitivity', {}).get('breakdown_rho')}")
+    print(f"  WARNING: this mediator is mechanically related to BLI; see paper for caveats.")
     print()
 
     plot_sensitivity(
         full_result.get("sensitivity"),
-        "Mediation sensitivity: BLI to departure via centrism (full panel)",
-        FIGURES_DIR / "mediation_sensitivity_full.pdf",
+        "Mediation sensitivity: BLI -> centrism -> departure (near-tautology comparator)",
+        FIGURES_DIR / "mediation_sensitivity_centrism_comparator.pdf",
     )
 
     era_results = {}
@@ -420,7 +457,8 @@ def main():
             "centrism_mean": float(panel["centrism"].mean()),
             "centrism_std": float(panel["centrism"].std()),
         },
-        "full_panel": full_result,
+        "main_party_unity_defection": main_result,
+        "comparator_centrism_near_tautology": full_result,
         "by_era": era_results,
         "lagged_centrism_robustness": lagged_result,
     }

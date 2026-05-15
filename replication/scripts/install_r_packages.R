@@ -38,7 +38,7 @@ cran_pkgs <- c(
   # bootstrap
   "remotes", "pacman", "devtools",
   # DiD comparator (task #5)
-  "DIDmultiplegtDYN", "didimputation", "fect", "triplediff",
+  "DIDmultiplegtDYN", "didimputation", "fect", "triplediff", "HonestDiD",
   # Placebo + equivalence + specification curve (#11, #12)
   "specr", "multiverse", "future", "future.apply", "furrr",
   # RDiT + IV + sdid (#13, #14, #15)

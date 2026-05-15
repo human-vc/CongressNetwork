@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-# Orchestration script for the full CongressNetwork analysis pipeline.
-# Designed for a Brev CPU instance (c7i.16xlarge / m7i.16xlarge or similar).
-#
-# Usage:
-#     bash run_all.sh                # full pipeline (install + all stages)
-#     bash run_all.sh --skip-install # skip dep installs
-#     bash run_all.sh --core-only    # data + spectral + causal, no R add-ons
-#
-# Stage gates: a FAIL in a core stage halts the run. The additive R-based
-# robustness scripts (Stage 7) are run "soft" -- a failure is logged but the
-# pipeline continues, because each is an independent supplementary check.
 
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -29,7 +18,7 @@ done
 
 ts() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 
-run() {  # hard: failure halts the pipeline
+run() {
   local name="$1" cmd="$2"
   echo
   echo "============================================================"
@@ -43,7 +32,7 @@ run() {  # hard: failure halts the pipeline
   fi
 }
 
-run_soft() {  # soft: failure logged, pipeline continues
+run_soft() {
   local name="$1" cmd="$2"
   echo
   echo "------------------------------------------------------------"
@@ -56,9 +45,6 @@ run_soft() {  # soft: failure logged, pipeline continues
   fi
 }
 
-# ============================================================
-# Stage 0 - Dependencies
-# ============================================================
 if [ "$SKIP_INSTALL" -eq 0 ]; then
   echo
   echo "============================================================"
@@ -113,10 +99,6 @@ if [ "$SKIP_INSTALL" -eq 0 ]; then
   echo "============================================================"
   echo "[$(ts)] Installing Python deps with pip (into the runtime python3)"
   echo "============================================================"
-  # Use `python3 -m pip` not uv: it guarantees packages land in the exact
-  # interpreter the analysis scripts run under. pip_install() tries a plain
-  # install first (works on old pip + unmanaged envs) and retries with
-  # --break-system-packages only if the env is PEP-668 externally-managed.
   pip_install() {
     python3 -m pip install "$@" 2>/tmp/pip_err.log && return 0
     if grep -q "externally-managed\|break-system-packages" /tmp/pip_err.log; then
@@ -128,9 +110,6 @@ if [ "$SKIP_INSTALL" -eq 0 ]; then
   }
   pip_install --upgrade pip 2>&1 | tee "$LOG_DIR/pip_bootstrap.log" || true
   pip_install -r requirements.txt 2>&1 | tee "$LOG_DIR/pip_install.log"
-  # geopandas is only needed for the optional compactness term in task #18;
-  # it has a fragile GDAL ABI dependency, so install it best-effort and let
-  # build_district_features.py degrade gracefully if it is unavailable.
   pip_install geopandas shapely fiona pyproj pyogrio \
     2>&1 | tee "$LOG_DIR/pip_geopandas.log" || \
     echo "[$(ts)] WARN geopandas install failed -- compactness term will be NaN"
@@ -142,33 +121,20 @@ if [ "$SKIP_INSTALL" -eq 0 ]; then
   $SUDO Rscript replication/scripts/install_r_packages.R 2>&1 | tee "$LOG_DIR/r_install.log"
 fi
 
-# ============================================================
-# Stage 1 - Data acquisition + processing
-# ============================================================
 run "download_voteview"       "python3 data/download_voteview.py"
 run "download_medsl"          "python3 src/medsl_data.py"
 run "download_ep_data"        "python3 data/download_ep_data.py"
 run "data_pipeline"           "python3 src/data_pipeline.py"
 run "build_district_features" "python3 src/build_district_features.py"
 
-# ============================================================
-# Stage 1.5 - Derived covariates (substantive mediator + departure types)
-# Must run before bli_regression / mediation / negative_controls.
-# ============================================================
 run "compute_party_unity"     "python3 src/compute_party_unity.py"
 run "build_departure_types"   "python3 src/build_departure_types.py"
 
-# ============================================================
-# Stage 2 - Core spectral analysis + BLI
-# ============================================================
 run "spectral_analysis"  "python3 src/spectral_analysis.py"
 run "weighted_spectral"  "python3 src/weighted_spectral.py"
 run "bli_regression"     "python3 src/bli_regression.py"
 run "null_model"         "python3 src/null_model_analysis.py"
 
-# ============================================================
-# Stage 3 - Theoretical verification
-# ============================================================
 run "bli_theorem_verification" "python3 src/bli_theorem_verification.py"
 run "bli_proof_verification"   "python3 src/bli_proof_verification.py"
 run "bli_theorem_proofs"       "python3 src/bli_theorem_proofs_verify.py"
@@ -176,9 +142,6 @@ run "sbm_benchmark"            "python3 src/sbm_benchmark_brev.py --scale large"
 run "sbm_concentration"        "python3 src/sbm_concentration_verify.py --scale large"
 run "bli_clt"                  "python3 src/bli_clt_verify.py --scale large"
 
-# ============================================================
-# Stage 4 - Causal identification
-# ============================================================
 run "cohort_ddd"          "python3 src/cohort_ddd.py"
 run "staggered_did"       "python3 src/staggered_did.py"
 run "honest_did"          "python3 src/honest_did.py"
@@ -188,9 +151,6 @@ run "freshman_cohort"     "python3 src/freshman_cohort_analysis.py"
 run "senate_pipeline"     "python3 src/senate_pipeline.py"
 run "senate_analysis"     "python3 src/senate_analysis.py"
 
-# ============================================================
-# Stage 5 - Robustness battery
-# ============================================================
 run "counterfactual_sensitivity"     "python3 src/counterfactual_sensitivity.py"
 run "recovery_threshold_sensitivity" "python3 src/recovery_threshold_sensitivity.py"
 run "sensitivity_sweep"              "python3 src/sensitivity_sweep.py"
@@ -199,15 +159,9 @@ run "centrality_comparison"          "python3 src/centrality_comparison.py"
 run "negative_controls"              "python3 src/negative_controls.py"
 run "placebo_loocv"                  "python3 src/placebo_loocv.py"
 
-# ============================================================
-# Stage 6 - Cross-national transfer
-# ============================================================
 run_soft "ep_bli_all_terms" "python3 src/ep_bli_all_terms.py"
 
 if [ "$CORE_ONLY" -eq 0 ]; then
-# ============================================================
-# Stage 7 - R-based DiD comparators + sensitivity (soft: additive checks)
-# ============================================================
 run_soft "did_comparator"          "Rscript src/did_comparator.R results/cohort_ddd_panel.csv results/did_comparator.json"
 run_soft "fect_placebo"            "Rscript src/fect_placebo.R"
 run_soft "specr_curve"             "Rscript src/specr_curve.R"
@@ -220,17 +174,11 @@ run_soft "causalweight_mediation"  "Rscript src/causalweight_mediation.R"
 run_soft "bayes_factor_dfbetas"    "Rscript src/bayes_factor_dfbetas.R"
 fi
 
-# ============================================================
-# Stage 8 - Figures
-# ============================================================
 run      "generate_figures"   "python3 src/generate_figures.py"
 run      "skeleton_network"   "python3 src/skeleton_network.py"
 run      "alluvial_data_prep" "python3 src/alluvial_data_prep.py"
 run_soft "alluvial_coalitions" "Rscript src/alluvial_coalitions.R"
 
-# ============================================================
-# Stage 9 - Compile paper
-# ============================================================
 run_soft "paper_compile" "cd paper && tectonic paper.tex"
 
 echo

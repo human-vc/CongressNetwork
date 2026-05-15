@@ -35,13 +35,11 @@ LOOK_FORWARD = 2
 LOW_PCTL = 0.10
 HIGH_PCTL = 0.90
 
-
 def load_congress(c):
     p = PROCESSED_DIR / f"congress_{c}.npz"
     if not p.exists():
         return None
     return np.load(p, allow_pickle=True)
-
 
 def compute_bli_for_member(adjacency, idx):
     n = adjacency.shape[0]
@@ -70,14 +68,12 @@ def compute_bli_for_member(adjacency, idx):
     removed = fiedler(adjacency[np.ix_(mask, mask)])
     return base - removed
 
-
 def load_bli_results():
     path = RESULTS_DIR / "bli_results.json"
     if not path.exists():
         return None
     with open(path) as f:
         return json.load(f)
-
 
 def build_panel():
     bli_data = load_bli_results()
@@ -140,17 +136,12 @@ def build_panel():
 
     panel = pd.DataFrame(rows)
 
-    # --- Substantive mediator: Carson-Koger-Lebo-Young / CQ party-unity score.
-    # See compute_party_unity.py. We invert so that higher values mean
-    # MORE bridge-like (less party-line voting) -> easier to interpret as
-    # a behavioural mechanism distinct from centrism.
     pu_path = RESULTS_DIR / "party_unity.csv"
     if pu_path.exists():
         pu = pd.read_csv(pu_path)[["congress", "icpsr", "party_unity"]]
         pu["one_minus_party_unity"] = 1.0 - pu["party_unity"]
         panel = panel.merge(pu, on=["congress", "icpsr"], how="left")
     return panel
-
 
 def push_panel_to_r(df, name="panel"):
     df_clean = df.copy()
@@ -160,7 +151,6 @@ def push_panel_to_r(df, name="panel"):
         r_df = ro.conversion.py2rpy(df_clean)
     ro.globalenv[name] = r_df
     return r_df
-
 
 def fit_mediation_r(df, treatment, mediator, outcome, controls, label, boot_reps=DEFAULT_BOOT_REPS, sims=DEFAULT_SIMS):
     raw_controls = [c.replace("factor(", "").replace("C(", "").replace(")", "") for c in controls]
@@ -273,7 +263,6 @@ def fit_mediation_r(df, treatment, mediator, outcome, controls, label, boot_reps
         "sensitivity": sens_result,
     }
 
-
 def cluster_bootstrap_mediation(df, treatment, mediator, outcome, controls, label, boot_reps=1000, sims=100):
     df_sub = df.dropna(subset=[treatment, mediator, outcome] + controls).copy()
     if len(df_sub) < 50:
@@ -325,7 +314,6 @@ def cluster_bootstrap_mediation(df, treatment, mediator, outcome, controls, labe
         "prop_med_cluster_ci": percentile_ci(estimates["prop_med"]),
     }
 
-
 def plot_sensitivity(sens_dict, title, out_path):
     import matplotlib.pyplot as plt
     if sens_dict is None or "rho_grid" not in sens_dict or sens_dict["rho_grid"] is None:
@@ -350,7 +338,6 @@ def plot_sensitivity(sens_dict, title, out_path):
     fig.savefig(out_path)
     plt.close(fig)
 
-
 def main():
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -366,12 +353,6 @@ def main():
     print(f"Departure rate: {panel['departed'].mean():.3f}")
     print()
 
-    # --- MAIN spec: substantive mediator (party-unity defection rate).
-    # Carson, Koger, Lebo & Young (2010, AJPS) document a behavioural pipeline
-    # bridging -> cross-party voting -> primary/general electoral cost ->
-    # retirement decision. one_minus_party_unity is the share of party-line
-    # votes on which the member defected -- distinct from BLI (a structural
-    # network statistic) and from centrism (= -|NOMINATE_dim1|, near-tautology).
     main_result = None
     if "one_minus_party_unity" in panel.columns and panel["one_minus_party_unity"].notna().sum() > 100:
         cor_pu_bli = float(panel[["bli", "one_minus_party_unity"]].dropna().corr().iloc[0, 1])
@@ -391,9 +372,6 @@ def main():
             FIGURES_DIR / "mediation_sensitivity_party_unity.pdf",
         )
 
-    # --- COMPARATOR spec: centrism (kept for transparency; flagged as
-    # near-tautological with BLI since centrism = -|NOMINATE_dim1| measures
-    # the same latent moderation construct BLI is built from).
     full_result = fit_mediation_r(
         panel, "bli", "centrism", "departed", controls_for_r,
         label="comparator_centrism_near_tautology",
@@ -467,7 +445,6 @@ def main():
     with open(out_path, "w") as f:
         json.dump(output, f, indent=2, default=str)
     print(f"\nSaved to {out_path}")
-
 
 if __name__ == "__main__":
     main()

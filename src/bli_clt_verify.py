@@ -1,30 +1,3 @@
-"""
-Theorem 5 (two-regime asymptotic-moments theorem for BLI) verification.
-
-Under the planted-bridge SBM with bridge-degree matching
-    q_b = ((m-1) p_in + (m(k-1)+1-b) p_out) / (k m - b)
-(cf. sbm_benchmark_brev.py), the standardised first-order BLI satisfies a
-two-regime moment-convergence statement (cf. Abbe, Fan, Wang & Zhong, AoS
-2020; Cape, Tang & Priebe, Biometrika 2019):
-
-  (i)  v in non-bridge block : Z_n(v) -> 0 in probability and in moments
-                                (degenerate point-mass limit)
-  (ii) v in bridge block     : E[Z_n(v)^k] -> m_k (moments of N(0,1)) for
-                                k=1,..,4
-
-The empirical protocol:
-  1. Generate 2N i.i.d. SBM samples per cell.
-  2. SPLIT-HALF: first N samples estimate (mu_hat, sigma_hat) per vertex;
-     second N samples are standardised using THOSE estimates and yield the
-     Z values for tests. This prevents the trivial 'mean=0, sd=1' artifact
-     that arises when moments and tests use the same sample.
-  3. Pool Z across vertices within a role (bridge / non-bridge), then report:
-       (a) moment estimates (mean, var, skew, kurt) with bootstrap CIs
-       (b) Wasserstein-2 distance from N(0,1)
-       (c) AD / KS / SW omnibus diagnostics with a sample-size disclaimer
-
-QQ plots and histograms are saved to FIGURES_DIR.
-"""
 import argparse
 import json
 import sys
@@ -52,7 +25,6 @@ except ImportError:
 
 warnings.filterwarnings("ignore")
 
-
 def fiedler_triple(A):
     n = A.shape[0]
     if not sparse.issparse(A):
@@ -73,7 +45,6 @@ def fiedler_triple(A):
     psi[np.where(keep)[0], :] = v[:, order]
     return float(w[order[1]]), float(w[order[2]]), psi
 
-
 def first_order_bli(A):
     out = fiedler_triple(A)
     if out is None:
@@ -81,10 +52,8 @@ def first_order_bli(A):
     lam2, lam3, psi = out
     return (lam3 - lam2) * (1.0 - psi[:, 1] ** 2)
 
-
 def degree_matched_q_bridge(m, b, p_in, p_out, k_main):
     return ((m - 1) * p_in + (m * (k_main - 1) + 1 - b) * p_out) / (k_main * m - b)
-
 
 def gen_sbm(m, b, p_in, p_out, k_main, seed):
     rng = np.random.default_rng(seed)
@@ -100,14 +69,11 @@ def gen_sbm(m, b, p_in, p_out, k_main, seed):
     G = nx.stochastic_block_model(sizes, P.tolist(), seed=int(rng.integers(2 ** 31 - 1)), sparse=True)
     return nx.to_scipy_sparse_array(G, dtype=np.float64, format="csr")
 
-
 def one_sample(m, b, p_in, p_out, k_main, seed):
     A = gen_sbm(m, b, p_in, p_out, k_main, seed)
     return first_order_bli(A)
 
-
 def _wasserstein2_to_normal(Z):
-    """Empirical W_2(F_Z, Phi) computed from sorted Z and Phi^{-1} at midranks."""
     Z = np.asarray(Z, dtype=float)
     Z = Z[np.isfinite(Z)]
     if Z.size < 50:
@@ -117,7 +83,6 @@ def _wasserstein2_to_normal(Z):
     probs = (np.arange(1, n + 1) - 0.5) / n
     q = stats.norm.ppf(probs)
     return float(np.sqrt(np.mean((Z_sorted - q) ** 2)))
-
 
 def _moment_bootstrap_ci(Z, n_boot=200, alpha=0.05, seed=0):
     rng = np.random.default_rng(seed)
@@ -141,9 +106,7 @@ def _moment_bootstrap_ci(Z, n_boot=200, alpha=0.05, seed=0):
         "kurt_excess_ci": [float(lo[3]), float(hi[3])],
     }
 
-
 def run_cell(m, b, p_in, p_out, k_main, N, base_seed, n_jobs):
-    # Generate 2N samples; split first/second halves for moments / tests.
     samples = Parallel(n_jobs=n_jobs, backend="loky", batch_size="auto")(
         delayed(one_sample)(m, b, p_in, p_out, k_main, base_seed + s) for s in range(2 * N)
     )
@@ -177,15 +140,12 @@ def run_cell(m, b, p_in, p_out, k_main, N, base_seed, n_jobs):
         sw_stat, sw_p = stats.shapiro(Z[:5000]) if Z.size >= 8 else (np.nan, np.nan)
         out[role] = {
             "n_samples": int(Z.size),
-            # Moments under the (target) standard normal: 0, 1, 0, 0.
             "mean": float(Z.mean()),
             "var": float(Z.var(ddof=1)),
             "skew": float(stats.skew(Z)),
             "kurt_excess": float(stats.kurtosis(Z)),
             "moment_bootstrap_ci": _moment_bootstrap_ci(Z, seed=base_seed),
-            # Distance to N(0,1)
             "wasserstein2_to_normal": _wasserstein2_to_normal(Z),
-            # Omnibus tests (disclosed; sample-size caveat applied in paper)
             "ks_stat": float(ks_stat), "ks_p": float(ks_p),
             "ad_stat": float(ad.statistic),
             "ad_crit_5pct": float(ad.critical_values[2]),
@@ -199,7 +159,6 @@ def run_cell(m, b, p_in, p_out, k_main, N, base_seed, n_jobs):
                    "N_used_for_tests": int(half),
                    "m": m, "b": b, "p_in": p_in, "p_out": p_out, "k_main": k_main}
     return out
-
 
 def plot_clt(cell_out, path, label):
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
@@ -218,7 +177,6 @@ def plot_clt(cell_out, path, label):
     fig.tight_layout()
     fig.savefig(path, bbox_inches="tight")
     plt.close(fig)
-
 
 def main():
     ap = argparse.ArgumentParser()
@@ -268,7 +226,6 @@ def main():
     out_json = RESULTS_DIR / f"bli_clt_verify_{args.scale}.json"
     out_json.write_text(json.dumps(summary, indent=2, default=str))
     print(f"Saved {out_json}")
-
 
 if __name__ == "__main__":
     main()

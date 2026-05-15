@@ -1,22 +1,3 @@
-"""
-Theorem 4 (BLI concentration) computational verification.
-
-For each (n, p_in, p_out, k_main, b) cell on a density sweep, generate L SBM
-samples and measure the empirical concentration of the first-order BLI vector
-around its population mean. The theoretical rate from Lei-Rinaldo style
-||L_hat - L_pop|| concentration combined with Davis-Kahan on (psi_2, lambda_2)
-predicts
-
-    |BLI_n(v) - BLI_pop(v)| = O( sqrt(log n / (n p_min)) / gamma* )
-
-where gamma* = lambda_3 - lambda_2 is the population spectral gap. The script
-fits a log-log regression of mean absolute error on n*p_min and checks that
-the slope is close to -1/2.
-
-Bridge degree-matching uses the SBM benchmark formula
-    q_b = ((m-1) p_in + (m (k-1) + 1 - b) p_out) / (k m - b)
-from sbm_benchmark_brev.py.
-"""
 import argparse
 import json
 import sys
@@ -41,12 +22,7 @@ except ImportError:
 
 warnings.filterwarnings("ignore")
 
-
 def fiedler_triple(A):
-    """Return (lam2, lam3, psi, kept_mask). psi rows for disconnected vertices
-    are returned as NaN so callers can mask them rather than treat a fake
-    zero embedding as a real eigenvector entry.
-    """
     n = A.shape[0]
     if not sparse.issparse(A):
         A = sparse.csr_matrix(A)
@@ -72,13 +48,7 @@ def fiedler_triple(A):
     psi[np.where(keep)[0], :] = v
     return float(w[1]), float(w[2]), psi, keep
 
-
 def first_order_bli(A):
-    """First-order BLI vector with degree-0 vertices masked to NaN.
-
-    Returning NaN for disconnected vertices avoids the bias from imputing
-    psi=0 (which would give BLI = lam3-lam2, the maximum) at low SBM density.
-    """
     out = fiedler_triple(A)
     if out is None:
         return None
@@ -88,10 +58,8 @@ def first_order_bli(A):
     bli[keep] = gap * (1.0 - psi[keep, 1] ** 2)
     return bli
 
-
 def degree_matched_q_bridge(m, b, p_in, p_out, k_main):
     return ((m - 1) * p_in + (m * (k_main - 1) + 1 - b) * p_out) / (k_main * m - b)
-
 
 def gen_sbm(m, b, p_in, p_out, k_main, seed):
     rng = np.random.default_rng(seed)
@@ -106,7 +74,6 @@ def gen_sbm(m, b, p_in, p_out, k_main, seed):
     P[k_main, k_main] = p_out
     G = nx.stochastic_block_model(sizes, P.tolist(), seed=int(rng.integers(2 ** 31 - 1)), sparse=True)
     return nx.to_scipy_sparse_array(G, dtype=np.float64, format="csr")
-
 
 def one_cell(m, b, p_in, p_out, k_main, L, base_seed):
     n_total = k_main * m + b
@@ -131,7 +98,6 @@ def one_cell(m, b, p_in, p_out, k_main, L, base_seed):
     bli_samples = np.stack(bli_samples, axis=0)
     bli_pop = np.nanmean(bli_samples, axis=0)
     diffs = np.abs(bli_samples - bli_pop[None, :])
-    # Mask vertex-replicates that lacked a valid BLI (disconnected in that draw).
     abs_err = float(np.nanmean(diffs))
     gamma_star = float(np.mean(pop_lam))
     predicted = np.sqrt(max(np.log(n_total), 1.0) / max(np_min, 1.0)) / max(gamma_star, 1e-6)
@@ -146,21 +112,16 @@ def one_cell(m, b, p_in, p_out, k_main, L, base_seed):
         "err_over_predicted": float(abs_err / predicted) if predicted > 0 else np.nan,
     }
 
-
 def build_grid(scale):
-    # We vary density (n p_min) along a primary axis with a fixed structural
-    # ratio p_in / p_out so the population spectral gap gamma* stays roughly
-    # constant within an (m, k_main) slice. The log-log slope is fit within
-    # each (m, k_main) slice and pooled.
     if scale == "smoke":
         ms = [50]
-        densities = [4, 8, 16, 32]  # target n * p_out values
+        densities = [4, 8, 16, 32]
         L = 20
     elif scale == "medium":
         ms = [50, 100]
         densities = [4, 8, 16, 32, 64]
         L = 40
-    else:  # large
+    else:
         ms = [100, 200, 400]
         densities = [4, 8, 16, 32, 64, 128]
         L = 80
@@ -170,13 +131,12 @@ def build_grid(scale):
             n_total = k_main * m + max(5, m // 10)
             for target in densities:
                 p_out = min(0.5, target / n_total)
-                p_in = 10 * p_out  # fixed structural ratio -> roughly fixed gamma*
+                p_in = 10 * p_out
                 if p_in > 0.9 or p_out < 1e-4:
                     continue
                 grid.append({"m": m, "b": max(5, m // 10), "p_in": p_in, "p_out": p_out,
                              "k_main": k_main, "L": L})
     return grid
-
 
 def loglog_slope(df, x_col, y_col):
     mask = (df[x_col] > 0) & (df[y_col] > 0)
@@ -191,7 +151,6 @@ def loglog_slope(df, x_col, y_col):
     return {"slope": float(slope), "intercept": float(intercept),
             "r2": float(1 - ss_res / ss_tot) if ss_tot > 0 else None,
             "n_points": int(mask.sum())}
-
 
 def main():
     ap = argparse.ArgumentParser()
@@ -237,7 +196,6 @@ def main():
     out_json = RESULTS_DIR / f"sbm_concentration_verify_{args.scale}.json"
     out_json.write_text(json.dumps(summary, indent=2))
     print(f"Saved {out_csv} and {out_json}")
-
 
 if __name__ == "__main__":
     main()

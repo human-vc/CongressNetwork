@@ -1,29 +1,3 @@
-"""Classify House-member departures by reason.
-
-Outcome categorisation used by all downstream causal scripts.
-
-The original spec defined `departed_within_2 = (icpsr not in c+2)` which conflates:
-  - voluntary retirement
-  - electoral defeat (general or primary)
-  - death in office
-  - departure to higher office (Senate, Governor, President)
-  - chamber/party switching
-
-Sources (cleanest minimum-work join, per Voteview codebook + Brookings Vital Statistics
-ch. 2 + Carson-Engstrom-Roberts practice):
-  - Voteview HSall_members.csv     -> `died` (year-of-death)
-  - data/house_deaths_1987_2025.csv -> hand-coded in-office deaths with exogenous flag
-  - data/medsl_house_1976_2024_clean.csv -> general-election outcomes
-  - bioguide_id presence in Senate roster in congress c+1  -> ran_for_higher_office
-
-We do NOT use Voteview `last_means`: it is the attain-office code (1=general,
-2=special, 3=elected-by-state-legislature, 5=appointed) and is not a departure
-reason. Voteview itself flags it as legacy/incomplete.
-
-Output: results/departure_types.csv with columns
-  icpsr, congress, in_next, died_in_office, ran_for_higher_office,
-  lost_general, lost_primary_or_unknown, voluntary_retire, departure_type
-"""
 import re
 import sys
 import unicodedata
@@ -35,9 +9,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import DATA_DIR, RESULTS_DIR
 
-
 CONGRESS_TO_ELECTION_YEAR = {c: 1789 + (c - 1) * 2 + 1 for c in range(100, 120)}
-
 
 def _normalize(name: str) -> str:
     if not isinstance(name, str):
@@ -47,14 +19,9 @@ def _normalize(name: str) -> str:
     s = re.sub(r"\s+", " ", s).strip()
     return s
 
-
 _SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "v"}
 
-
 def _surname(full_name: str) -> str:
-    """Extract surname. Handles Voteview ('LAST, First') and MEDSL ('FIRST LAST').
-    Drops nickname-in-quotes and Jr/Sr/II suffixes.
-    """
     if not isinstance(full_name, str) or not full_name.strip():
         return ""
     if "," in full_name:
@@ -64,7 +31,6 @@ def _surname(full_name: str) -> str:
         return ""
     tokens = [t for t in s.split() if t and t not in _SUFFIXES]
     return tokens[-1] if tokens else ""
-
 
 def load_members():
     df = pd.read_csv(DATA_DIR / "HSall_members.csv", low_memory=False)
@@ -77,7 +43,6 @@ def load_members():
     df["surname"] = df["bioname"].apply(_surname)
     return df
 
-
 def load_medsl():
     df = pd.read_csv(DATA_DIR / "medsl_house_1976_2024_clean.csv", low_memory=False)
     df = df[df["stage"].str.upper() == "GEN"]
@@ -86,7 +51,6 @@ def load_medsl():
     df["candidatevotes"] = pd.to_numeric(df["candidatevotes"], errors="coerce").fillna(0)
     df["totalvotes"] = pd.to_numeric(df["totalvotes"], errors="coerce").fillna(0)
     return df
-
 
 def load_house_deaths():
     p = DATA_DIR / "house_deaths_1987_2025.csv"
@@ -98,10 +62,7 @@ def load_house_deaths():
     df["district"] = pd.to_numeric(df["district"], errors="coerce")
     return df[["congress", "state", "district", "surname"]]
 
-
 def medsl_general_winner(medsl, election_year, state_po, district, surname):
-    """Was `surname` the winner of the general in (state, district, year)?
-    Returns: (winner_match: bool, race_found: bool)"""
     race = medsl[
         (medsl["year"] == election_year)
         & (medsl["state_po"] == state_po)
@@ -112,9 +73,7 @@ def medsl_general_winner(medsl, election_year, state_po, district, surname):
     winner_row = race.sort_values("candidatevotes", ascending=False).iloc[0]
     return _surname(winner_row["candidate"]) == surname, True
 
-
 def medsl_appeared_as_candidate(medsl, election_year, state_po, district, surname):
-    """Did `surname` appear on the general-election ballot at all?"""
     race = medsl[
         (medsl["year"] == election_year)
         & (medsl["state_po"] == state_po)
@@ -124,7 +83,6 @@ def medsl_appeared_as_candidate(medsl, election_year, state_po, district, surnam
         return False
     cands = race["candidate_norm"].tolist()
     return any(s and s == surname for s in cands)
-
 
 def classify(members, medsl, deaths, congresses):
     house_rosters = {
@@ -187,9 +145,6 @@ def classify(members, medsl, deaths, congresses):
             elif lost_general:
                 dt = "lost_general"
             elif lost_primary or voluntary:
-                # MEDSL has gen-only coverage; cannot reliably distinguish
-                # voluntary retirement from primary loss when incumbent is
-                # absent from the general ballot. Bin them together.
                 dt = "did_not_seek_general"
             else:
                 dt = "ambiguous"
@@ -205,7 +160,6 @@ def classify(members, medsl, deaths, congresses):
                 "departure_type": dt,
             })
     return pd.DataFrame(rows)
-
 
 def main():
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -230,7 +184,6 @@ def main():
     )
     import json
     (RESULTS_DIR / "departure_types_summary.json").write_text(json.dumps(summary, indent=2))
-
 
 if __name__ == "__main__":
     main()

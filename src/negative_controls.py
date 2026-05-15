@@ -1,26 +1,3 @@
-"""Negative-control outcome / exposure tests for the BLI -> departure GEE.
-
-Six tests (Lipsitch et al. 2010; Tchetgen Tchetgen 2014; Eggers, Tunon, Dafoe
-2024 AJPS). Each fit reuses the main GEE spec (Binomial / Independence /
-cluster by icpsr).
-
-NCO-1: successor's first-term DW-NOMINATE distance from chamber median
-    Substantive plausibility: successor's ideology is determined by election,
-    not by predecessor's BLI -> null.
-NCO-2 (NEW, replaces yea-rate-on-suspension which mechanically tracks
-       moderation): legislator's BIRTH YEAR. Pre-determined before service,
-       hence cannot be caused by BLI in current Congress; small residual
-       cohort correlation possible.
-NCO-3 (NEW, replaces synthetic education noise): legislator's surname
-       initial index (A=1 ... Z=26). Truly null: surname is determined at
-       birth and has no documented causal pathway to political behaviour
-       in this corpus.
-NCE-1 (REPLACED, drops Senate-counterpart BLI which has plausible state-
-       level spillover): BLI of a DIFFERENT-state member of the same
-       Congress, randomly matched. True negative exposure with no causal
-       pathway.
-NCE-2: within-Congress permutation of BLI, N_PERMUTATIONS draws.
-"""
 import sys
 import json
 import warnings
@@ -45,14 +22,11 @@ warnings.filterwarnings("ignore")
 COVARS = ["ideology_distance", "seniority", "is_republican"]
 N_PERMUTATIONS = 1000
 
-
 def fit_gee_binomial(y, X, groups, maxiter=80):
     return GEE(y, X, groups=groups, family=Binomial(), cov_struct=Independence()).fit(maxiter=maxiter)
 
-
 def fit_gee_gaussian(y, X, groups, maxiter=80):
     return GEE(y, X, groups=groups, family=Gaussian(), cov_struct=Independence()).fit(maxiter=maxiter)
-
 
 def coef_record(res, focal):
     b = float(res.params[focal])
@@ -61,8 +35,6 @@ def coef_record(res, focal):
     z = norm.ppf(0.975)
     return {"coef": b, "se": se, "p": p, "ci_lo": b - z * se, "ci_hi": b + z * se}
 
-
-# ----- NCO_1: successor distance -----
 def attach_successor_distance(panel):
     members = pd.read_csv(DATA_DIR / "HSall_members.csv", low_memory=False)
     house = members[members["chamber"] == "House"].copy()
@@ -83,8 +55,6 @@ def attach_successor_distance(panel):
         out.append(float(np.nanmean(np.abs(new["nominate_dim1"] - chamber_med[succ_c]))))
     return np.array(out)
 
-
-# ----- NCO_2 (new): birth year -----
 def attach_birth_year(panel):
     members = pd.read_csv(DATA_DIR / "HSall_members.csv", low_memory=False)
     house = members[members["chamber"] == "House"][["congress", "icpsr", "born"]].drop_duplicates()
@@ -93,8 +63,6 @@ def attach_birth_year(panel):
     merged = panel.merge(house, on=["congress", "icpsr"], how="left")
     return merged["born"].values.astype(float)
 
-
-# ----- NCO_3 (new): surname initial index -----
 def attach_surname_initial(panel):
     members = pd.read_csv(DATA_DIR / "HSall_members.csv", low_memory=False)
     house = members[members["chamber"] == "House"][["congress", "icpsr", "bioname"]].drop_duplicates()
@@ -113,8 +81,6 @@ def attach_surname_initial(panel):
     )
     return merged["surname_initial_idx"].values.astype(float)
 
-
-# ----- NCE_1 (new): BLI of a different-state member, randomly matched -----
 def attach_cross_state_bli(panel):
     members = pd.read_csv(DATA_DIR / "HSall_members.csv", low_memory=False)
     house_state = members[members["chamber"] == "House"][["congress", "icpsr", "state_abbrev"]].drop_duplicates()
@@ -134,8 +100,6 @@ def attach_cross_state_bli(panel):
             out[i] = float(pick["bli"])
     return out
 
-
-# ----- NCE_2: within-Congress permutation -----
 def _perm_one(seed, y, base_X, bli, groups, congress):
     rng = np.random.default_rng(seed)
     perm = bli.copy()
@@ -149,8 +113,6 @@ def _perm_one(seed, y, base_X, bli, groups, congress):
     except Exception:
         return np.nan
 
-
-# ----- Runners -----
 def run_nco(panel, name, new_outcome):
     mask = ~np.isnan(new_outcome)
     sub = panel[mask].copy()
@@ -158,7 +120,6 @@ def run_nco(panel, name, new_outcome):
     X = sm.add_constant(sub[["bli"] + COVARS].astype(float))
     res = fit_gee_gaussian(y, X, sub["icpsr"])
     return {"test": name, "n": int(len(sub)), **coef_record(res, "bli")}
-
 
 def run_nce_1(panel, cross_bli):
     mask = ~np.isnan(cross_bli)
@@ -168,7 +129,6 @@ def run_nce_1(panel, cross_bli):
     y = sub["departed_within_2"].astype(float)
     res = fit_gee_binomial(y, X, sub["icpsr"])
     return {"test": "NCE_1", "n": int(len(sub)), **coef_record(res, "bli_cross_state")}
-
 
 def run_nce_2(panel):
     y = panel["departed_within_2"].values.astype(float)
@@ -185,7 +145,6 @@ def run_nce_2(panel):
     p = float(np.mean(np.abs(coefs) >= abs(obs)))
     return {"test": "NCE_2", "n_draws": len(coefs), "observed_bli_coef": obs,
             "perm_mean": float(coefs.mean()), "perm_sd": float(coefs.std()), "p_perm": p}
-
 
 def main():
     print("Building base panel...")
@@ -233,7 +192,6 @@ def main():
         focal = r.get("p", r.get("p_perm"))
         print(f"  {r['test']:35s}: p={focal:.3g}")
     print(f"  Joint Bonferroni p: {joint_bonf:.3g}")
-
 
 if __name__ == "__main__":
     main()

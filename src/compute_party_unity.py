@@ -1,21 +1,3 @@
-"""Compute Carson-Koger-Lebo-Young / CQ party-unity score per (icpsr, congress).
-
-Definition (Theriault 2008 ch.3, CQ convention):
-  - Restrict to recorded roll calls in House.
-  - cast_code 1,2,3 = Yea; 4,5,6 = Nay; others (paired / abstain / not voting) excluded.
-  - For each roll call, compute the majority position separately among voting
-    Democrats and voting Republicans. A party-line vote is one where the two
-    party majorities are on opposite sides.
-  - For each member, party_unity = mean over party-line votes of
-    1{member's vote == own-party majority}.
-
-Output: results/party_unity.csv with columns
-  congress, icpsr, party_unity, n_party_line_votes, party_code
-
-We also report the Cox-McCubbins style 'adjusted party unity' that excludes
-procedural votes by `vote_question` containing 'procedural' / 'previous question'
-/ 'order of business' substrings, when those columns are present.
-"""
 import sys
 from pathlib import Path
 
@@ -25,10 +7,8 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import DATA_DIR, RESULTS_DIR
 
-
 YEA_CODES = {1, 2, 3}
 NAY_CODES = {4, 5, 6}
-
 
 def compute_party_unity(votes, members, rollcalls, exclude_procedural=False):
     members_h = members[(members.chamber == "House") & (members.party_code.isin([100, 200]))].copy()
@@ -88,7 +68,6 @@ def compute_party_unity(votes, members, rollcalls, exclude_procedural=False):
     )
     return agg
 
-
 def main():
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     print("Loading votes (this is the big file)...")
@@ -112,7 +91,6 @@ def main():
     pu_adj = pu_adj.rename(columns={"party_unity": "party_unity_adj", "n_party_line_votes": "n_party_line_votes_adj"})
     pu_adj.to_csv(RESULTS_DIR / "party_unity_adjusted.csv", index=False)
     print(f"Wrote {RESULTS_DIR / 'party_unity_adjusted.csv'}: {len(pu_adj)} rows")
-
 
 if __name__ == "__main__":
     main()

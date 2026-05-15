@@ -18,11 +18,7 @@ try:
 except Exception:
     _HAS_PYFIXEST = False
 
-
 def attach_departure_types(panel):
-    """Merge in the 5-way departure classification when available.
-    Adds: in_next, departed_voluntary_or_primary, lost_general, died_in_office,
-          ran_for_higher_office, departure_type."""
     p = RESULTS_DIR / "departure_types.csv"
     if not p.exists():
         return panel
@@ -31,7 +27,6 @@ def attach_departure_types(panel):
             "lost_general", "died_in_office", "ran_for_higher_office",
             "departure_type"]
     return panel.merge(dt[keep], on=["icpsr", "congress"], how="left")
-
 
 def build_panel():
     bli_path = RESULTS_DIR / "bli_results.json"
@@ -110,21 +105,14 @@ def build_panel():
     panel = attach_departure_types(panel)
     return panel
 
-
 def iqr_scale_effects(coef, se, panel, var="bli", base_rate=None):
-    """Translate a logit coefficient into IQR-scale magnitudes that reviewers
-    can read without unit confusion. Returns effect_iqr (logit), odds_ratio_iqr,
-    risk_ratio_iqr (at base_rate), and E-value.
-    """
     x = panel[var].dropna().values
     iqr = float(np.quantile(x, 0.75) - np.quantile(x, 0.25))
     eff = coef * iqr
     or_iqr = float(np.exp(eff))
     if base_rate is None:
         base_rate = float(panel["departed_within_2"].mean())
-    # Risk ratio approximation from odds ratio + base rate (VanderWeele 2017).
     rr_iqr = or_iqr / (1 - base_rate + base_rate * or_iqr)
-    # E-value (VanderWeele & Ding 2017).
     rr_e = max(rr_iqr, 1 / rr_iqr)
     e_value = rr_e + np.sqrt(rr_e * (rr_e - 1)) if rr_e >= 1 else np.nan
     se_eff_iqr = abs(se * iqr)
@@ -138,11 +126,7 @@ def iqr_scale_effects(coef, se, panel, var="bli", base_rate=None):
         "e_value": float(e_value) if np.isfinite(e_value) else None,
     }
 
-
 def fit_member_fe_lpm(panel, outcome="departed_within_2"):
-    """Linear probability model with two-way fixed effects (member + congress).
-    Singletons are dropped by pyfixest. Standard errors clustered by icpsr.
-    """
     if not _HAS_PYFIXEST:
         return {"error": "pyfixest not installed"}
     sub = panel.dropna(subset=[outcome, "bli", "ideology_distance", "seniority"]).copy()
@@ -168,7 +152,6 @@ def fit_member_fe_lpm(panel, outcome="departed_within_2"):
     except Exception as e:
         return {"error": str(e), "outcome": outcome}
 
-
 def run_gee(panel, include_bli=True, label=""):
     if include_bli:
         formula_vars = ["bli", "ideology_distance", "seniority", "is_republican"]
@@ -192,7 +175,6 @@ def run_gee(panel, include_bli=True, label=""):
     print(result.summary())
     return result
 
-
 def run_interaction_model(panel):
     X = panel[["bli", "ideology_distance", "seniority", "is_republican"]].copy()
     X["bli_x_republican"] = X["bli"] * X["is_republican"]
@@ -211,7 +193,6 @@ def run_interaction_model(panel):
     print(f"{'='*60}")
     print(result.summary())
     return result
-
 
 def run_era_splits(panel):
     eras = {
@@ -233,7 +214,6 @@ def run_era_splits(panel):
             "pvalues": dict(zip(result.pvalues.index.tolist(), result.pvalues.values.tolist())),
         }
     return era_results
-
 
 def main():
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -379,7 +359,6 @@ def main():
             print(f"  {struct_name}: failed ({e})")
             corr_sensitivity[struct_name] = {"error": str(e)}
 
-    # --- Headline IQR-scale effect on the main GEE coefficient ---
     bli_coef_main = float(result_with_bli.params["bli"])
     bli_se_main = float(result_with_bli.bse["bli"])
     iqr_main = iqr_scale_effects(bli_coef_main, bli_se_main, panel, var="bli")
@@ -390,12 +369,10 @@ def main():
     print(f"  Risk-ratio at IQR: {iqr_main['risk_ratio_iqr']:.3f}")
     print(f"  E-value: {iqr_main['e_value']}")
 
-    # --- Member + Congress fixed-effects LPM (pyfixest) ---
     print("\n--- Two-way FE LPM (member + congress) on departed_within_2 ---")
     fe_default = fit_member_fe_lpm(panel, outcome="departed_within_2")
     print(f"  result: {fe_default}")
 
-    # --- FE LPM on substantive 'departed by choice / primary' subset ---
     fe_voluntary = None
     if "did_not_seek_general" in panel.columns:
         panel_v = panel.copy()
@@ -437,7 +414,6 @@ def main():
         json.dump(output, f, indent=2)
 
     print("\nBLI regression analysis complete.")
-
 
 if __name__ == "__main__":
     main()

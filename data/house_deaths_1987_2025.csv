@@ -1,0 +1,51 @@
+name,party,state,district,congress,date_of_death,age_at_death,cause_category,exogenous_flag,retirement_announced,notes
+"BURTON, Sala Galante",D,CA,5,100,1987-02-01,61,cancer_long,0,0,colon_cancer_diagnosed_Aug_1986
+"MCKINNEY, Stewart Brett",R,CT,4,100,1987-05-07,56,sudden_illness,1,0,AIDS_undisclosed_pre_death
+"DANIEL, W. C. Dan",D,VA,5,100,1988-01-23,73,sudden,0,1,announced_retirement_4_days_prior
+"HOWARD, James John",D,NJ,3,100,1988-03-25,60,sudden,1,0,heart_attack
+"PRICE, Charles Melvin",D,IL,21,100,1988-04-22,83,old_age,0,0,age_chronic
+"DUNCAN, John James Sr.",R,TN,2,100,1988-06-21,69,cancer_long,0,0,cancer
+"NICHOLS, William Flynt",D,AL,3,100,1988-12-13,70,sudden,1,0,heart_attack_at_office
+"PEPPER, Claude Denson",D,FL,18,101,1989-05-30,88,cancer_long,0,0,stomach_cancer_known
+"LELAND, George Thomas Mickey",D,TX,18,101,1989-08-07,44,accident,1,0,plane_crash_Ethiopia
+"SMITH, Larkin Ivan",R,MS,5,101,1989-08-13,45,accident,1,0,plane_crash
+"CONTE, Silvio Otto",R,MA,1,102,1991-02-08,69,sudden_surgical,1,0,brain_surgery_complication
+"WEISS, Theodore Solomon",D,NY,8,102,1992-09-14,64,sudden,1,0,heart_failure
+"EMERSON, Bill",R,MO,8,104,1996-06-22,58,cancer_long,0,0,lung_cancer
+"TEJEDA, Frank Mariano",D,TX,28,105,1997-01-30,51,cancer_long,0,0,brain_cancer_diagnosed_1995
+"CAPPS, Walter Holden",D,CA,22,105,1997-10-28,63,sudden,1,0,heart_attack_at_Dulles
+"BONO, Salvatore Sonny",R,CA,44,105,1998-01-05,62,accident,1,0,skiing_accident
+"SCHIFF, Steven Harvey",R,NM,1,105,1998-03-25,51,cancer_long,0,1,cancer_retirement_announced
+"BROWN, George Edward Jr.",D,CA,42,106,1999-07-15,79,sudden_surgical,1,0,post_heart_valve_surgery
+"VENTO, Bruce Frank",D,MN,4,106,2000-10-10,60,cancer_long,0,1,mesothelioma_announced_retirement
+"DIXON, Julian Carey",D,CA,32,106,2000-12-08,66,sudden,1,0,heart_attack
+"SISISKY, Norman",D,VA,4,107,2001-03-29,73,cancer_long,0,0,lung_cancer
+"MOAKLEY, John Joseph Joe",D,MA,9,107,2001-05-28,74,cancer_long,0,1,leukemia_announced_retirement
+"SPENCE, Floyd Davidson",R,SC,2,107,2001-08-16,73,sudden_surgical,1,0,cerebral_thrombosis_post_op
+"MINK, Patsy Takemoto",D,HI,2,107,2002-09-28,74,sudden_illness,1,0,viral_pneumonia_from_chickenpox
+"MATSUI, Robert Takeo",D,CA,5,108,2005-01-01,63,cancer_short,1,0,MDS_diagnosed_weeks_before
+"NORWOOD, Charles Whitlow",R,GA,10,110,2007-02-13,65,cancer_long,0,1,liver_cancer_announced
+"MILLENDER-MCDONALD, Juanita",D,CA,37,110,2007-04-22,68,cancer_short,1,0,colon_cancer_revealed_last_month
+"GILLMOR, Paul Eugene",R,OH,5,110,2007-09-05,68,accident,1,0,fall_down_stairs
+"DAVIS, Jo Ann",R,VA,1,110,2007-10-06,57,cancer_long,0,0,breast_cancer
+"CARSON, Julia May",D,IN,7,110,2007-12-15,69,cancer_long,0,1,lung_cancer_retirement
+"LANTOS, Thomas Peter",D,CA,12,110,2008-02-11,80,cancer_long,0,1,esophageal_cancer_retirement
+"JONES, Stephanie Tubbs",D,OH,11,110,2008-08-20,58,sudden,1,0,cerebral_hemorrhage
+"MURTHA, John Patrick Jr.",D,PA,12,111,2010-02-08,77,sudden_surgical,1,0,post_gallbladder_surgery
+"PAYNE, Donald Milford Sr.",D,NJ,10,112,2012-03-06,77,cancer_short,1,0,colon_cancer_disclosed_Feb
+"YOUNG, Charles William Bill",R,FL,13,113,2013-10-18,82,cancer_long,0,1,multiple_myeloma_retirement
+"NUNNELEE, Alan",R,MS,1,114,2015-02-06,56,cancer_long,0,1,brain_cancer_retirement
+"TAKAI, Mark Mizutsuko",D,HI,1,114,2016-07-20,49,cancer_long,0,1,pancreatic_cancer_retirement
+"SLAUGHTER, Louise McIntosh",D,NY,25,115,2018-03-16,88,accident,0,0,fall_concussion_age_88
+"JONES, Walter Beaman Jr.",R,NC,3,116,2019-02-10,76,chronic,0,0,ALS_declining
+"CUMMINGS, Elijah Eugene",D,MD,7,116,2019-10-17,68,chronic,0,0,longstanding_health
+"LEWIS, John Robert",D,GA,5,116,2020-07-17,80,cancer_long,0,0,pancreatic_cancer_known
+"WRIGHT, Ron",R,TX,6,117,2021-02-07,67,sudden_illness,0,0,COVID_with_prior_cancer
+"HASTINGS, Alcee Lamar",D,FL,20,117,2021-04-06,84,cancer_long,0,0,pancreatic_cancer_known
+"HAGEDORN, Jim",R,MN,1,117,2022-02-17,59,cancer_long,0,0,kidney_cancer_diagnosed_2019
+"YOUNG, Donald Edwin",R,AK,0,117,2022-03-18,88,sudden,1,0,sudden_cardiac_on_flight_running_again
+"WALORSKI, Jackie",R,IN,2,117,2022-08-03,58,accident,1,0,traffic_collision
+"MCEACHIN, Aston Donald",D,VA,4,117,2022-11-28,61,cancer_long,0,0,colorectal_cancer_recurrence
+"PAYNE, Donald Milford Jr.",D,NJ,10,118,2024-04-24,65,sudden,1,0,heart_attack_diabetic_episode
+"JACKSON LEE, Sheila",D,TX,18,118,2024-07-19,74,cancer_short,1,0,pancreatic_cancer_diagnosed_June_2024
+"PASCRELL, William James Jr.",D,NJ,9,118,2024-08-21,87,chronic,0,0,age_87_respiratory_infection

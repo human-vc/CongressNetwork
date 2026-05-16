@@ -436,19 +436,15 @@ A power analysis tempers the interpretation of this null. At the observed standa
 
 \draw[cred, line width=0.8pt] (axis cs:0.0064,0) -- (axis cs:0.0064,0.0599);
 \draw[cred, line width=0.8pt] (axis cs:0,0.0599) -- (axis cs:0.0064,0.0599);
-\addplot[only marks, mark=*, mark size=2.5pt, cred] coordinates {(0.0064,0.0599)};
-\node[font=\tiny, anchor=south west, text=cred] at (axis cs:0.007,0.05)
-  {observed effect $0.006$: power $= 0.06$};
 
 \draw[cblue, line width=0.8pt] (axis cs:0.0609,0) -- (axis cs:0.0609,0.80);
 \draw[cblue, line width=0.8pt] (axis cs:0,0.80) -- (axis cs:0.0609,0.80);
-\addplot[only marks, mark=*, mark size=2.5pt, cblue] coordinates {(0.0609,0.80)};
 \node[font=\tiny, anchor=south east, text=cblue] at (axis cs:0.058,0.82)
   {MDE for 80\% power $= 0.061$};
 
 \end{axis}
 \end{tikzpicture}
-\caption{Power curve for the freshman-by-competitive-by-post-2010 triple-interaction coefficient in the cohort difference-in-difference-in-differences specification. Power is computed at $\alpha = 0.05$ from the observed standard error of $0.018$ across a range of hypothetical true effect sizes. At the observed effect of $0.006$ the test has $6\%$ power; the minimum detectable effect at conventional $80\%$ power is $0.061$, a tenfold gap that places the null squarely in the underpowered regime. The two-way decomposition specifications reported in Section~\ref{subsec:cohort_ddd} are powered at the $5{,}000$-observation panel scale and identify positive findings in the direction opposite the conventional Tea-Party-cohort-shock hypothesis.}
+\caption{Power curve for the freshman-by-competitive-by-post-2010 triple-interaction coefficient in the cohort difference-in-difference-in-differences specification. Power is computed at $\alpha = 0.05$ from the observed standard error of $0.018$ across a range of hypothetical true effect sizes. The red crosshair marks the observed effect ($\beta = 0.006$) at $6\%$ power; the blue crosshair marks the minimum detectable effect for conventional $80\%$ power ($\mathrm{MDE} = 0.061$). The tenfold gap between observed effect and MDE places the null squarely in the underpowered regime. The two-way decomposition specifications reported in Section~\ref{subsec:cohort_ddd} are powered at the $5{,}000$-observation panel scale and identify positive findings in the direction opposite the conventional Tea-Party-cohort-shock hypothesis.}
 \label{fig:ddd_power}
 \end{figure} Two two-way decompositions resolve more cleanly. The freshman-by-post-2010 interaction, pooling across competitiveness, returns a coefficient of $+0.029$ with $p = 1.2 \times 10^{-5}$: post-2010 freshmen are more cooperative than pre-2010 freshmen, contracting the gap between freshmen and incumbents rather than widening it. The continuous-treatment specification using each member's prior margin returns a post-2010-by-safe-margin coefficient of $-0.019$ with $p = 0.049$: safer seats polarized further, not competitive ones. Both results are inconsistent with a primary-threat-on-competitive-freshmen mechanism and consistent with the environmental thesis we develop below, in which post-2010 polarization is concentrated in safe seats and operates on incumbents and freshmen alike.
 
@@ -1125,10 +1121,10 @@ The bounds and first-order formula above are verified at two levels of rigor. Sy
   title style={font=\small, yshift=2pt},
 ]
 \draw[cdark, dashed, line width=0.5pt] (axis cs:170,0) -- (axis cs:1300,0);
-\addplot[cred, line width=1.0pt, mark=*, mark size=2.6pt, mark options={fill=cred, draw=cred!70!black}]
-  coordinates {(190,-0.127) (370,0.009) (910,0.018)};
-\addplot[cblue, line width=1.0pt, mark=square*, mark size=2.4pt, mark options={fill=cblue, draw=cblue!70!black}]
-  coordinates {(230,-0.127) (460,0.009) (1130,0.018)};
+\addplot[cred, line width=1.2pt, smooth, tension=0.7, mark=none]
+  coordinates {(210,-0.127) (410,0.009) (1010,0.018)};
+\addplot[cblue, line width=1.2pt, smooth, tension=0.7, mark=none, dashed]
+  coordinates {(210,-0.127) (410,0.009) (1010,0.018)};
 
 \nextgroupplot[
   ymin=-0.42, ymax=0.20,
@@ -1139,12 +1135,10 @@ The bounds and first-order formula above are verified at two levels of rigor. Sy
   title style={font=\small, yshift=2pt},
 ]
 \draw[cdark, dashed, line width=0.5pt] (axis cs:170,0) -- (axis cs:1300,0);
-\addplot[cred, line width=1.0pt, mark=*, mark size=2.6pt, mark options={fill=cred, draw=cred!70!black}]
-  coordinates {(190,0.069) (370,-0.300) (910,-0.069)};
-\addplot[cblue, line width=1.0pt, mark=square*, mark size=2.4pt, mark options={fill=cblue, draw=cblue!70!black}]
-  coordinates {(230,0.072) (460,-0.297) (1130,-0.069)};
-\node[font=\tiny, anchor=south west, text=cred] at (axis cs:185,0.14) {$\bullet$ bridge};
-\node[font=\tiny, anchor=south west, text=cblue] at (axis cs:430,0.14) {$\blacksquare$ non-bridge};
+\addplot[cred, line width=1.2pt, smooth, tension=0.7, mark=none]
+  coordinates {(210,0.069) (410,-0.300) (1010,-0.069)};
+\addplot[cblue, line width=1.2pt, smooth, tension=0.7, mark=none, dashed]
+  coordinates {(210,0.072) (410,-0.297) (1010,-0.069)};
 
 \nextgroupplot[
   ymin=0.05, ymax=0.13,
@@ -1154,15 +1148,15 @@ The bounds and first-order formula above are verified at two levels of rigor. Sy
   title={(C) Wasserstein-2 distance},
   title style={font=\small, yshift=2pt},
 ]
-\addplot[cred, line width=1.0pt, mark=*, mark size=2.6pt, mark options={fill=cred, draw=cred!70!black}]
-  coordinates {(190,0.071) (370,0.102) (910,0.111)};
-\addplot[cblue, line width=1.0pt, mark=square*, mark size=2.4pt, mark options={fill=cblue, draw=cblue!70!black}]
-  coordinates {(230,0.069) (460,0.101) (1130,0.110)};
+\addplot[cred, line width=1.2pt, smooth, tension=0.7, mark=none]
+  coordinates {(210,0.071) (410,0.102) (1010,0.111)};
+\addplot[cblue, line width=1.2pt, smooth, tension=0.7, mark=none, dashed]
+  coordinates {(210,0.069) (410,0.101) (1010,0.110)};
 
 \end{groupplot}
 \end{tikzpicture}
 }
-\caption{Two-regime moment convergence for the standardised first-order Bridge Legislator Index under the planted-bridge SBM with split-half standardisation. Bridge (red circles) and non-bridge (blue squares) markers are jittered horizontally to disclose that the two regimes deliver nearly identical higher-order behaviour at each scale: skewness and excess kurtosis remain within $\pm 0.3$ of their Gaussian targets and the empirical Wasserstein-2 distance to $\mathcal{N}(0,1)$ stabilises near $0.10$. The Anderson-Darling omnibus rejects normality at $\alpha = 0.05$ at these bulk sizes ($N = 5{,}000$ to $100{,}000$), with rejections driven by the bulk size rather than substantive departure from the limit law: with $N \geq 5{,}000$ the test has power above $0.99$ against $W_2$ gaps of order $10^{-3}$, and the observed values are consistent with the finite-sample residuals predicted by Theorem~5.}
+\caption{Two-regime moment convergence for the standardised first-order Bridge Legislator Index under the planted-bridge SBM with split-half standardisation. Bridge (solid red) and non-bridge (dashed blue) curves are essentially indistinguishable across all three diagnostics, indicating that the asymptotic moment behaviour is uniform across vertex roles. Skewness and excess kurtosis remain within $\pm 0.3$ of their Gaussian targets at every scale, and the empirical Wasserstein-2 distance to $\mathcal{N}(0,1)$ stabilises near $0.10$. The Anderson-Darling omnibus rejects normality at $\alpha = 0.05$ at these bulk sizes ($N = 5{,}000$ to $100{,}000$), with rejections driven by the bulk size rather than substantive departure from the limit law: with $N \geq 5{,}000$ the test has power above $0.99$ against $W_2$ gaps of order $10^{-3}$, and the observed values are consistent with the finite-sample residuals predicted by Theorem~5.}
 \label{fig:moment_clt}
 \end{figure}
 
@@ -1340,8 +1334,6 @@ The GEE-binomial specification of Figure~\ref{fig:bli_regression} clusters obser
 \draw[cdark!75, line width=1.1pt] (axis cs:1.062,1) -- (axis cs:1.146,1);
 \addplot[only marks, mark=*, mark size=2.2pt, cdark!75, mark options={fill=cdark!75, draw=cdark, line width=0.3pt}]
   coordinates {(1.102,1)};
-
-\node[font=\tiny, anchor=west, text=cdark] at (axis cs:1.32,0.85) {$p = 3.6 \times 10^{-10}$};
 \end{axis}
 
 \begin{axis}[
@@ -1366,25 +1358,19 @@ The GEE-binomial specification of Figure~\ref{fig:bli_regression} clusters obser
 \draw[cdark!75, line width=1.1pt] (axis cs:0.942,3) -- (axis cs:1.251,3);
 \addplot[only marks, mark=*, mark size=2.2pt, cdark!75, mark options={fill=cdark!75, draw=cdark, line width=0.3pt}]
   coordinates {(1.085,3)};
-\node[font=\tiny, anchor=west, text=cdark] at (axis cs:1.27,3) {$p = 0.26$};
 
 \draw[cred, line width=1.1pt] (axis cs:1.018,2) -- (axis cs:1.425,2);
 \addplot[only marks, mark=*, mark size=2.4pt, cred, mark options={fill=cred, draw=cred!60!black, line width=0.4pt}]
   coordinates {(1.205,2)};
-\node[font=\tiny, anchor=west, text=cdark] at (axis cs:1.43,2) {$p = 0.030$};
 
 \draw[cred, line width=1.1pt] (axis cs:1.006,1) -- (axis cs:1.345,1);
 \addplot[only marks, mark=*, mark size=2.4pt, cred, mark options={fill=cred, draw=cred!60!black, line width=0.4pt}]
   coordinates {(1.163,1)};
-\node[font=\tiny, anchor=west, text=cdark] at (axis cs:1.35,1) {$p = 0.042$};
-
-\node[font=\tiny, anchor=south west, text=cdark] at (axis cs:0.92,0.6)
-  {Joint Wald $\chi^2(3) = 48.8$, $p = 1.4 \times 10^{-10}$};
 \end{axis}
 
 \end{tikzpicture}
 }
-\caption{Cox proportional-hazards model for legislator departure with time-varying Bridge Legislator Index. (A) Contemporaneous specification, reported as hazard ratios at four reference contrasts in the BLI distribution. Red markers highlight the two tail-percentile contrasts that anchor the substantive interpretation; the 10--90 contrast is the headline (HR $= 1.34$, $95\%$ CI $[1.22, 1.47]$). (B) Distributed-lag decomposition with contemporaneous BLI and one- and two-Congress lagged BLI as joint covariates. The contemporaneous coefficient attenuates because the lagged terms absorb the persistent component of bridging history; the lagged terms remain individually significant and the joint Wald test rejects the null of no BLI effect at $p < 10^{-9}$.}
+\caption{Cox proportional-hazards model for legislator departure with time-varying Bridge Legislator Index. (A) Contemporaneous specification, reported as hazard ratios at four reference contrasts in the BLI distribution; the 10th-to-90th-percentile contrast is the headline at HR $= 1.34$ ($95\%$ CI $[1.22, 1.47]$, $p = 3.6 \times 10^{-10}$), with the 5th-to-95th-percentile contrast at HR $= 1.52$. Red markers indicate the two tail-percentile contrasts. (B) Distributed-lag decomposition with contemporaneous BLI and one- and two-Congress lagged BLI as joint covariates. Individual coefficients are: contemporaneous $p = 0.26$ (gray), one-Congress lag HR $= 1.21$ at $p = 0.030$ (red), two-Congress lag HR $= 1.16$ at $p = 0.042$ (red). The joint Wald test rejects the null of no BLI effect at $\chi^2(3) = 48.8$, $p = 1.4 \times 10^{-10}$. The contemporaneous coefficient attenuates because the lagged terms absorb the persistent component of bridging history.}
 \label{fig:cox_ph}
 \end{figure}
 
@@ -1417,8 +1403,6 @@ Following \citet{lipsitch2010negative} and \citet{eggers2024placebo}, we evaluat
 \draw[cdark, dashed, line width=0.5pt] (axis cs:0,0.5) -- (axis cs:0,4.5);
 \draw[cred!60, dashed, line width=0.5pt] (axis cs:-1.96,0.5) -- (axis cs:-1.96,4.5);
 \draw[cred!60, dashed, line width=0.5pt] (axis cs:1.96,0.5) -- (axis cs:1.96,4.5);
-\node[font=\tiny, text=cred!80!black, anchor=south] at (axis cs:-1.96,4.5) {$-1.96$};
-\node[font=\tiny, text=cred!80!black, anchor=south] at (axis cs:1.96,4.5) {$+1.96$};
 
 \draw[cdark!75, line width=1.1pt] (axis cs:-1.42,4) -- (axis cs:2.49,4);
 \addplot[only marks, mark=*, mark size=2.2pt, cdark!75]
@@ -1461,16 +1445,11 @@ Following \citet{lipsitch2010negative} and \citet{eggers2024placebo}, we evaluat
   (72,0.002) (78,0.001)
 };
 \draw[cred, line width=1.2pt] (axis cs:180.3,0) -- (axis cs:180.3,0.021);
-\node[font=\tiny, anchor=east, text=cred, rotate=90] at (axis cs:180.3,0.011) {observed $= 180.3$};
-\node[font=\tiny, anchor=north west, text=cdark] at (axis cs:-105,0.023)
-  {null $\mu = -0.58$, $\sigma = 25.6$};
-\node[font=\tiny, anchor=north west, text=cdark] at (axis cs:-105,0.020)
-  {$z = 7.05$, $p_{\mathrm{perm}} < 10^{-3}$};
 \end{axis}
 
 \end{tikzpicture}
 }
-\caption{Negative-control outcome (NCO) and exposure (NCE) tests for the BLI--departure association. (A) Four parametric controls reported on a standardised $z$-score axis with reference lines at $\pm 1.96$. All four standardised estimates fall within or near the $\pm 1.96$ band; NCO-2 (birth year) is the closest to formal significance at $z = 1.94$ but does not exceed the threshold. (B) NCE-2 is structurally different: it permutes BLI within each Congress 1{,}000 times, refits the GEE, and recovers the null distribution of the BLI coefficient. The observed coefficient ($+180.3$) lies $7.05$ standard deviations above the permutation null mean ($-0.58$), with no permuted draw exceeding the observed value in absolute magnitude ($p_{\mathrm{perm}} < 10^{-3}$).}
+\caption{Negative-control outcome (NCO) and exposure (NCE) tests for the BLI--departure association. (A) Four parametric controls reported on a standardised $z$-score axis with dashed red reference lines at $\pm 1.96$. All four standardised estimates fall within or near the $\pm 1.96$ band: NCO-1 successor distance $z = 0.53$, NCO-2 birth year $z = 1.94$, NCO-3 surname initial $z = 0.87$, NCE-1 cross-state BLI $z = 0.53$. NCO-2 is the closest to formal significance but does not exceed the threshold. (B) NCE-2 permutes BLI within each Congress 1{,}000 times, refits the GEE, and recovers the null distribution of the BLI coefficient (gray histogram, $\mu = -0.58$, $\sigma = 25.6$). The observed coefficient (red rule at $+180.3$) lies $z = 7.05$ standard deviations above the permutation null, with no permuted draw exceeding the observed value in absolute magnitude ($p_{\mathrm{perm}} < 10^{-3}$).}
 \label{fig:neg_controls}
 \end{figure}
 

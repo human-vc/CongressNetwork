@@ -1099,16 +1099,17 @@ The bounds and first-order formula above are verified at two levels of rigor. Sy
 
 \begin{figure}[H]
 \centering
+\makebox[\linewidth][c]{%
 \begin{tikzpicture}
 \begin{groupplot}[
   group style={
     group size=3 by 1,
-    horizontal sep=1.3cm,
+    horizontal sep=1.6cm,
   },
   gat,
-  width=0.32\linewidth, height=0.28\linewidth,
+  width=0.30\linewidth, height=0.27\linewidth,
   xmode=log,
-  xmin=180, xmax=1200,
+  xmin=170, xmax=1300,
   xtick={210,410,1010},
   xticklabels={210,410,1010},
   tick label style={font=\scriptsize},
@@ -1116,51 +1117,52 @@ The bounds and first-order formula above are verified at two levels of rigor. Sy
 ]
 
 \nextgroupplot[
-  ymin=-0.22, ymax=0.10,
+  ymin=-0.22, ymax=0.12,
   ytick={-0.2,-0.1,0,0.1},
   ylabel={Skewness},
   xlabel={$n$},
   title={(A) Skewness},
   title style={font=\small, yshift=2pt},
 ]
-\draw[cdark, dashed, line width=0.5pt] (axis cs:180,0) -- (axis cs:1200,0);
-\addplot[cred, line width=1.0pt, mark=*, mark size=2pt, mark options={fill=cred}]
-  coordinates {(210,-0.127) (410,0.009) (1010,0.018)};
-\addplot[cblue, line width=1.0pt, mark=square*, mark size=2pt, mark options={fill=cblue}]
-  coordinates {(210,-0.127) (410,0.009) (1010,0.018)};
-\node[font=\tiny, anchor=south west, text=cred] at (axis cs:200,-0.20) {bridge};
-\node[font=\tiny, anchor=south west, text=cblue] at (axis cs:200,-0.16) {non-bridge};
+\draw[cdark, dashed, line width=0.5pt] (axis cs:170,0) -- (axis cs:1300,0);
+\addplot[cred, line width=1.0pt, mark=*, mark size=2.6pt, mark options={fill=cred, draw=cred!70!black}]
+  coordinates {(190,-0.127) (370,0.009) (910,0.018)};
+\addplot[cblue, line width=1.0pt, mark=square*, mark size=2.4pt, mark options={fill=cblue, draw=cblue!70!black}]
+  coordinates {(230,-0.127) (460,0.009) (1130,0.018)};
 
 \nextgroupplot[
-  ymin=-0.42, ymax=0.18,
+  ymin=-0.42, ymax=0.20,
   ytick={-0.4,-0.3,-0.2,-0.1,0,0.1},
   ylabel={Excess kurtosis},
   xlabel={$n$},
   title={(B) Excess kurtosis},
   title style={font=\small, yshift=2pt},
 ]
-\draw[cdark, dashed, line width=0.5pt] (axis cs:180,0) -- (axis cs:1200,0);
-\addplot[cred, line width=1.0pt, mark=*, mark size=2pt, mark options={fill=cred}]
-  coordinates {(210,0.069) (410,-0.300) (1010,-0.069)};
-\addplot[cblue, line width=1.0pt, mark=square*, mark size=2pt, mark options={fill=cblue}]
-  coordinates {(210,0.072) (410,-0.297) (1010,-0.069)};
+\draw[cdark, dashed, line width=0.5pt] (axis cs:170,0) -- (axis cs:1300,0);
+\addplot[cred, line width=1.0pt, mark=*, mark size=2.6pt, mark options={fill=cred, draw=cred!70!black}]
+  coordinates {(190,0.069) (370,-0.300) (910,-0.069)};
+\addplot[cblue, line width=1.0pt, mark=square*, mark size=2.4pt, mark options={fill=cblue, draw=cblue!70!black}]
+  coordinates {(230,0.072) (460,-0.297) (1130,-0.069)};
+\node[font=\tiny, anchor=south west, text=cred] at (axis cs:185,0.14) {$\bullet$ bridge};
+\node[font=\tiny, anchor=south west, text=cblue] at (axis cs:430,0.14) {$\blacksquare$ non-bridge};
 
 \nextgroupplot[
   ymin=0.05, ymax=0.13,
   ytick={0.05,0.07,0.09,0.11,0.13},
-  ylabel={Wasserstein-2 to $\mathcal{N}(0,1)$},
+  ylabel={$W_2$ distance to $\mathcal{N}(0,1)$},
   xlabel={$n$},
-  title={(C) $W_2$ distance},
+  title={(C) Wasserstein-2 distance},
   title style={font=\small, yshift=2pt},
 ]
-\addplot[cred, line width=1.0pt, mark=*, mark size=2pt, mark options={fill=cred}]
-  coordinates {(210,0.071) (410,0.102) (1010,0.111)};
-\addplot[cblue, line width=1.0pt, mark=square*, mark size=2pt, mark options={fill=cblue}]
-  coordinates {(210,0.069) (410,0.101) (1010,0.110)};
+\addplot[cred, line width=1.0pt, mark=*, mark size=2.6pt, mark options={fill=cred, draw=cred!70!black}]
+  coordinates {(190,0.071) (370,0.102) (910,0.111)};
+\addplot[cblue, line width=1.0pt, mark=square*, mark size=2.4pt, mark options={fill=cblue, draw=cblue!70!black}]
+  coordinates {(230,0.069) (460,0.101) (1130,0.110)};
 
 \end{groupplot}
 \end{tikzpicture}
-\caption{Two-regime moment convergence for the standardised first-order Bridge Legislator Index under the planted-bridge SBM with split-half standardisation. Bridge vertices (red circles) and non-bridge vertices (blue squares) exhibit nearly identical higher-order behaviour across the three scales, with skewness and excess kurtosis remaining within $\pm 0.3$ of their Gaussian targets and the empirical Wasserstein-2 distance to $\mathcal{N}(0, 1)$ stabilising near $0.10$. The Anderson-Darling omnibus rejects normality at $\alpha = 0.05$ for samples of this size in both regimes, with rejections driven by the bulk size $N = 5{,}000$ to $100{,}000$ rather than substantive departure from the limit law: with $N \geq 5{,}000$ the test has power above 0.99 against $W_2$ gaps of order $10^{-3}$, and the observed $W_2$ values are consistent with the finite-sample residuals predicted by Theorem~5.}
+}
+\caption{Two-regime moment convergence for the standardised first-order Bridge Legislator Index under the planted-bridge SBM with split-half standardisation. Bridge (red circles) and non-bridge (blue squares) markers are jittered horizontally to disclose that the two regimes deliver nearly identical higher-order behaviour at each scale: skewness and excess kurtosis remain within $\pm 0.3$ of their Gaussian targets and the empirical Wasserstein-2 distance to $\mathcal{N}(0,1)$ stabilises near $0.10$. The Anderson-Darling omnibus rejects normality at $\alpha = 0.05$ at these bulk sizes ($N = 5{,}000$ to $100{,}000$), with rejections driven by the bulk size rather than substantive departure from the limit law: with $N \geq 5{,}000$ the test has power above $0.99$ against $W_2$ gaps of order $10^{-3}$, and the observed values are consistent with the finite-sample residuals predicted by Theorem~5.}
 \label{fig:moment_clt}
 \end{figure}
 
@@ -1400,13 +1402,12 @@ Following \citet{lipsitch2010negative} and \citet{eggers2024placebo}, we evaluat
 \begin{axis}[
   name=panelNCA,
   gat,
-  width=0.46\linewidth, height=0.30\linewidth,
+  width=0.46\linewidth, height=0.32\linewidth,
   xmin=-3.0, xmax=3.0,
   ymin=0.5, ymax=4.5,
   ytick={1,2,3,4},
   yticklabels={NCE-1: cross-state BLI, NCO-3: surname initial, NCO-2: birth year, NCO-1: successor distance},
-  xtick={-3,-2,-1.96,-1,0,1,1.96,2,3},
-  xticklabels={$-3$,$-2$,$-1.96$,$-1$,0,1,$1.96$,2,3},
+  xtick={-3,-2,-1,0,1,2,3},
   xlabel={Standardised effect ($z = \widehat{\beta} / \widehat{\mathrm{SE}}$)},
   enlargelimits=false,
   title={(A) Parametric negative controls},
@@ -1416,6 +1417,8 @@ Following \citet{lipsitch2010negative} and \citet{eggers2024placebo}, we evaluat
 \draw[cdark, dashed, line width=0.5pt] (axis cs:0,0.5) -- (axis cs:0,4.5);
 \draw[cred!60, dashed, line width=0.5pt] (axis cs:-1.96,0.5) -- (axis cs:-1.96,4.5);
 \draw[cred!60, dashed, line width=0.5pt] (axis cs:1.96,0.5) -- (axis cs:1.96,4.5);
+\node[font=\tiny, text=cred!80!black, anchor=south] at (axis cs:-1.96,4.5) {$-1.96$};
+\node[font=\tiny, text=cred!80!black, anchor=south] at (axis cs:1.96,4.5) {$+1.96$};
 
 \draw[cdark!75, line width=1.1pt] (axis cs:-1.42,4) -- (axis cs:2.49,4);
 \addplot[only marks, mark=*, mark size=2.2pt, cdark!75]
@@ -1437,9 +1440,9 @@ Following \citet{lipsitch2010negative} and \citet{eggers2024placebo}, we evaluat
 \begin{axis}[
   at={(panelNCA.east)}, anchor=west, xshift=1.8cm,
   gat,
-  width=0.34\linewidth, height=0.30\linewidth,
-  xmin=-100, xmax=210,
-  ymin=0, ymax=0.022,
+  width=0.42\linewidth, height=0.32\linewidth,
+  xmin=-110, xmax=220,
+  ymin=0, ymax=0.024,
   xtick={-80,-40,0,40,80,120,160,200},
   ytick=\empty,
   xlabel={Permuted BLI coefficient},
@@ -1457,11 +1460,12 @@ Following \citet{lipsitch2010negative} and \citet{eggers2024placebo}, we evaluat
   (42,0.008) (48,0.007) (54,0.005) (60,0.004) (66,0.003)
   (72,0.002) (78,0.001)
 };
-\draw[cred, line width=1.2pt] (axis cs:180.3,0) -- (axis cs:180.3,0.020);
-\node[font=\tiny, anchor=south, text=cred] at (axis cs:180.3,0.020) {observed};
-\node[font=\tiny, anchor=west, text=cdark] at (axis cs:90,0.015) {null: $\mu = -0.58$,};
-\node[font=\tiny, anchor=west, text=cdark] at (axis cs:90,0.013) {$\sigma = 25.6$};
-\node[font=\tiny, anchor=west, text=cdark] at (axis cs:90,0.010) {$z = 7.05$, $p_{\mathrm{perm}} < 10^{-3}$};
+\draw[cred, line width=1.2pt] (axis cs:180.3,0) -- (axis cs:180.3,0.021);
+\node[font=\tiny, anchor=east, text=cred, rotate=90] at (axis cs:180.3,0.011) {observed $= 180.3$};
+\node[font=\tiny, anchor=north west, text=cdark] at (axis cs:-105,0.023)
+  {null $\mu = -0.58$, $\sigma = 25.6$};
+\node[font=\tiny, anchor=north west, text=cdark] at (axis cs:-105,0.020)
+  {$z = 7.05$, $p_{\mathrm{perm}} < 10^{-3}$};
 \end{axis}
 
 \end{tikzpicture}

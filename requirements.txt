@@ -15,4 +15,5 @@ pyfixest>=0.18
 differences>=0.2
 PySensemakr
 econml>=0.15
+lifelines>=0.27
 rpy2>=3.5

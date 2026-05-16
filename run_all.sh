@@ -158,6 +158,7 @@ run "vote_filtering"                 "python3 src/vote_filtering.py"
 run "centrality_comparison"          "python3 src/centrality_comparison.py"
 run "negative_controls"              "python3 src/negative_controls.py"
 run "placebo_loocv"                  "python3 src/placebo_loocv.py"
+run "within_member_robustness"       "python3 src/within_member_robustness.py"
 
 run_soft "ep_bli_all_terms" "python3 src/ep_bli_all_terms.py"
 

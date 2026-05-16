@@ -78,11 +78,23 @@ def cox_ph_time_varying(panel, outcome="departed_within_2", extra_covars=None):
             try:
                 from scipy.stats import chi2
                 joint_vars = ["bli"] + list(extra_covars)
-                betas = summary.loc[joint_vars, "coef"].values.astype(float)
-                V = ctv.variance_matrix_.loc[joint_vars, joint_vars].values.astype(float)
-                wald = float(betas @ np.linalg.solve(V, betas))
+                params = ctv.params_
+                param_names = list(params.index)
+                positions = [param_names.index(v) for v in joint_vars]
+                V_raw = ctv.variance_matrix_
+                V_arr = V_raw.values if hasattr(V_raw, "values") else np.asarray(V_raw)
+                V_sub = V_arr[np.ix_(positions, positions)].astype(float)
+                betas = params.values[positions].astype(float)
+                wald = float(betas @ np.linalg.solve(V_sub, betas))
                 p_joint = float(1 - chi2.cdf(wald, df=len(joint_vars)))
-                out["wald_joint"] = {"chi2": wald, "df": len(joint_vars), "p": p_joint, "vars": joint_vars}
+                out["wald_joint"] = {
+                    "chi2": wald,
+                    "df": len(joint_vars),
+                    "p": p_joint,
+                    "vars": joint_vars,
+                    "individual_coefs": {v: float(params[v]) for v in joint_vars},
+                    "individual_pvals": {v: float(summary.loc[v, "p"]) for v in joint_vars},
+                }
             except Exception as e:
                 out["wald_joint_error"] = str(e)
         return out

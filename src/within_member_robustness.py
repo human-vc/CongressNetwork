@@ -30,41 +30,62 @@ def within_between_variance(panel, var="bli"):
         "rho_intraclass": float(between.var() / (within.var() + between.var())),
     }
 
-def cox_ph_time_varying(panel, outcome="departed_within_2"):
-    sub = panel.dropna(subset=[outcome, "bli", "ideology_distance", "seniority", "is_republican"]).copy()
+def _scale_panel(scales, bli_series):
+    return {
+        "sd":      float(bli_series.std()),
+        "iqr":     float(bli_series.quantile(0.75) - bli_series.quantile(0.25)),
+        "p90_p10": float(bli_series.quantile(0.90) - bli_series.quantile(0.10)),
+        "p95_p05": float(bli_series.quantile(0.95) - bli_series.quantile(0.05)),
+    }
+
+def cox_ph_time_varying(panel, outcome="departed_within_2", extra_covars=None):
+    cols = ["bli", "ideology_distance", "seniority", "is_republican"]
+    if extra_covars:
+        cols = cols + list(extra_covars)
+    sub = panel.dropna(subset=[outcome] + cols).copy()
     sub = sub.sort_values(["icpsr", "congress"]).reset_index(drop=True)
     sub["start"] = sub["congress"].astype(int) - 100
     sub["stop"] = sub["start"] + 2
     sub["event"] = sub[outcome].astype(int)
+    fit_cols = ["icpsr", "start", "stop", "event"] + cols
     try:
         from lifelines import CoxTimeVaryingFitter
         ctv = CoxTimeVaryingFitter(penalizer=0.001)
-        ctv.fit(
-            sub[["icpsr", "start", "stop", "event", "bli", "ideology_distance", "seniority", "is_republican"]],
-            id_col="icpsr",
-            event_col="event",
-            start_col="start",
-            stop_col="stop",
-        )
+        ctv.fit(sub[fit_cols], id_col="icpsr", event_col="event",
+                start_col="start", stop_col="stop")
         summary = ctv.summary
         coef = float(summary.loc["bli", "coef"])
         se = float(summary.loc["bli", "se(coef)"])
         p = float(summary.loc["bli", "p"])
-        hr = float(summary.loc["bli", "exp(coef)"])
-        bli_iqr = float(sub["bli"].quantile(0.75) - sub["bli"].quantile(0.25))
-        return {
+        scales = _scale_panel(None, sub["bli"])
+        out = {
             "engine": "lifelines.CoxTimeVaryingFitter",
             "coef": coef,
             "se": se,
             "p": p,
-            "hazard_ratio_unit": hr,
-            "hazard_ratio_iqr": float(np.exp(coef * bli_iqr)),
-            "bli_iqr": bli_iqr,
+            "scales": scales,
+            "hazard_ratio_per_sd":       float(np.exp(coef * scales["sd"])),
+            "hazard_ratio_per_iqr":      float(np.exp(coef * scales["iqr"])),
+            "hazard_ratio_p90_vs_p10":   float(np.exp(coef * scales["p90_p10"])),
+            "hazard_ratio_p95_vs_p05":   float(np.exp(coef * scales["p95_p05"])),
             "n_obs": int(len(sub)),
             "n_events": int(sub["event"].sum()),
             "n_members": int(sub["icpsr"].nunique()),
             "outcome": outcome,
+            "extra_covars": list(extra_covars) if extra_covars else [],
         }
+        if extra_covars:
+            try:
+                from scipy.stats import chi2
+                joint_vars = ["bli"] + list(extra_covars)
+                betas = summary.loc[joint_vars, "coef"].values.astype(float)
+                V = ctv.variance_matrix_.loc[joint_vars, joint_vars].values.astype(float)
+                wald = float(betas @ np.linalg.solve(V, betas))
+                p_joint = float(1 - chi2.cdf(wald, df=len(joint_vars)))
+                out["wald_joint"] = {"chi2": wald, "df": len(joint_vars), "p": p_joint, "vars": joint_vars}
+            except Exception as e:
+                out["wald_joint_error"] = str(e)
+        return out
     except ImportError:
         return _cox_ph_via_r(sub, outcome)
     except Exception as e:
@@ -163,6 +184,14 @@ def main():
     cox_full = cox_ph_time_varying(panel, outcome="departed_within_2")
     print(json.dumps(cox_full, indent=2))
 
+    print("\n=== A2. Cox PH with distributed lag BLI(t,t-1,t-2) joint Wald ===")
+    cox_lag = cox_ph_time_varying(
+        panel.dropna(subset=["bli_lag1", "bli_lag2"]),
+        outcome="departed_within_2",
+        extra_covars=["bli_lag1", "bli_lag2"],
+    )
+    print(json.dumps(cox_lag, indent=2))
+
     print("\n=== A'. Cox PH on voluntary_or_primary subset ===")
     panel_v = panel.copy()
     if "did_not_seek_general" in panel_v.columns:
@@ -191,6 +220,7 @@ def main():
     output = {
         "bli_variance_decomposition": vc,
         "cox_ph_full_panel": cox_full,
+        "cox_ph_distributed_lag": cox_lag,
         "cox_ph_voluntary_or_primary": cox_vol,
         "lag1_fe_lpm": lag1,
         "lag2_fe_lpm": lag2,
